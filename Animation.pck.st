@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4191] on 29 May 2020 at 11:46:04 am'!
+'From Cuis 5.0 [latest update: #4228] on 21 June 2020 at 5:33:41 pm'!
 'Description '!
-!provides: 'Animation' 1 3!
+!provides: 'Animation' 1 4!
 SystemOrganization addCategory: #Animation!
 SystemOrganization addCategory: #'Animation-Collections-Atomic'!
 
@@ -76,10 +76,19 @@ AtomicQueueItem class
 	instanceVariableNames: ''!
 
 
-!AnimatedProperty commentStamp: 'ThibaultRaffaillac 1/14/2017 17:28' prior: 0!
+!AnimatedProperty commentStamp: 'hlsf 6/21/2020 17:31:43' prior: 0!
 I can animate any property from outside, repeatedly sending setter messages until target value is reached. The target type must support + and *Float operations. Depends on AnimationSupervisor to prevent concurrent updates on the same property.
 
-- morph position: (100@100 during: 2 seconds)!
+- morph position: (100@100 during: 2 seconds)
+
+I can animate any property from outside, repeatedly sending setter messages until target value is reached. The target type must support + and *Float operations. Depends on AnimationSupervisor to prevent concurrent updates on the same property.
+
+| morph |
+morph := SystemWindow new openInWorld.
+morph color: (Color black during: 5 seconds);
+	morphExtent: (300@200 during: 5 seconds as: AnimatedProperty circOut);
+	morphPosition: (10@10 during: 5 seconds);
+	label: ('Cuis Smalltalk' during: 2 seconds ).!
 
 !AnimationSupervisor commentStamp: 'ThibaultRaffaillac 1/14/2017 17:15' prior: 0!
 Just a class-side Set to ensure there is at most one animation running on any {object, selector} at any time.!
@@ -188,8 +197,8 @@ target
 then: aBlock
 	then := aBlock! !
 
-!AnimatedProperty methodsFor: 'initialization' stamp: 'hlsf 5/27/2020 13:10:35'!
-receiver: anObject selector: aSelector argument: to during: aDelay
+!AnimatedProperty methodsFor: 'initialization' stamp: 'hlsf 6/21/2020 17:23:29'!
+receiver: anObject selector: aSelector argument: to during: aDelay as: anEase
 	| from |
 	target := anObject.
 	selector := aSelector.
@@ -197,7 +206,7 @@ receiver: anObject selector: aSelector argument: to during: aDelay
 	to isArray ifTrue: [ values := to copyWithFirst: from ]
 		ifFalse: [ values := Array with: from with: to ].
 	duration := aDelay.
-	easing := self linear .
+	easing := anEase .
 	interpolator := self proportional.
 	self start.! !
 
@@ -225,129 +234,6 @@ refresh
 !AnimatedProperty methodsFor: 'comparing' stamp: 'ThibaultRaffaillac 11/2/2016 10:04'!
 hash
 	^target hash bitXor: selector hash! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-backIn
-	^[ :t | t * t * (2.70158 * t - 1.70158) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-backInOut
-	^[ :t | | u |
-		u := t - 1.0.
-		t < 0.5 ifTrue: [ 2.0 * t * t * (7.189819 * t - 2.5949095) ]
-			ifFalse: [ 2.0 * u * u * (7.189819 * u + 2.5949095) + 1.0 ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-backOut
-	^[ :t | | u | u := t - 1.0. u * u * (2.70158 * u + 1.70158) + 1.0 ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-circIn
-	^[ :t | 1.0 - (1.0 - (t * t)) sqrt ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-circInOut
-	^[ :t | | u |
-		u := 1.0 - t.
-		t < 0.5 ifTrue: [ 0.5 * (1.0 - (1.0 - (4.0 * t * t)) sqrt) ]
-			ifFalse: [ 0.5 * (1.0 + (1.0 - (4.0 * u * u)) sqrt) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-circOut
-	^[ :t | | u | u := 1.0 - t. (1.0 - (u * u)) sqrt ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-cubicIn
-	^[ :t | t * t * t ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-cubicInOut
-	^[ :t | | u |
-		u := 1.0 - t.
-		t < 0.5 ifTrue: [ 4.0 * t * t * t ] ifFalse: [ 1.0 - (4.0 * u * u * u) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-cubicOut
-	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-expIn
-	^[ :t | 2.0 raisedTo: 10.0 * (t - 1.0) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-expInOut
-	^[ :t |
-		t < 0.5 ifTrue: [ 0.5 * (2 raisedTo: 20.0 * (t - 0.5)) ]
-			ifFalse: [ 1.0 - (0.5 * (2 raisedTo: 20.0 * (0.5 - t))) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-expOut
-	^[ :t | 1.0 - (2.0 raisedTo: t * -10.0) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-linear
-	^[ :t | t ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quadIn
-	^[ :t | t * t ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quadInOut
-	^[ :t | | u |
-		u := 1.0 - t.
-		t < 0.5 ifTrue: [ 2.0 * t * t ] ifFalse: [ 1.0 - (2.0 * u * u) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quadOut
-	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quartIn
-	^[ :t | t * t * t * t ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quartInOut
-	^[ :t | | u |
-		u := 1.0 - t.
-		t < 0.5 ifTrue: [ 8.0 * t * t * t * t ] ifFalse: [ 1.0 - (8.0 * u * u * u * u) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quartOut
-	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u * u) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quintIn
-	^[ :t | t * t * t * t * t ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quintInOut
-	^[ :t | | u |
-		u := 1.0 - t.
-		t < 0.5 ifTrue: [ 16.0 * t * t * t * t * t ] ifFalse: [ 1.0 - (16.0 * u * u * u * u * u) ]
-	]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-quintOut
-	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u * u * u) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-sineIn
-	^[ :t | 1.0 - (t * Float halfPi) cos ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-sineInOut
-	^[ :t | 0.5 - ((t * Float pi) cos * 0.5) ]! !
-
-!AnimatedProperty methodsFor: 'easing' stamp: 'ThibaultRaffaillac 1/14/2017 17:09'!
-sineOut
-	^[ :t | (t * Float halfPi) sin ]! !
 
 !AnimatedProperty methodsFor: 'interpolators' stamp: 'ThibaultRaffaillac 4/25/2017 20:00'!
 proportional
@@ -409,6 +295,129 @@ value: timestamp
 		target perform: selector with: values last.
 		then value.
 	].! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:20'!
+backIn
+	^[ :t | t * t * (2.70158 * t - 1.70158) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:25'!
+backInOut
+	^[ :t | | u |
+		u := t - 1.0.
+		t < 0.5 ifTrue: [ 2.0 * t * t * (7.189819 * t - 2.5949095) ]
+			ifFalse: [ 2.0 * u * u * (7.189819 * u + 2.5949095) + 1.0 ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:28'!
+backOut
+	^[ :t | | u | u := t - 1.0. u * u * (2.70158 * u + 1.70158) + 1.0 ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:35'!
+circIn
+	^[ :t | 1.0 - (1.0 - (t * t)) sqrt ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:41'!
+circInOut
+	^[ :t | | u |
+		u := 1.0 - t.
+		t < 0.5 ifTrue: [ 0.5 * (1.0 - (1.0 - (4.0 * t * t)) sqrt) ]
+			ifFalse: [ 0.5 * (1.0 + (1.0 - (4.0 * u * u)) sqrt) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:45'!
+circOut
+	^[ :t | | u | u := 1.0 - t. (1.0 - (u * u)) sqrt ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:52'!
+cubicIn
+	^[ :t | t * t * t ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:25:57'!
+cubicInOut
+	^[ :t | | u |
+		u := 1.0 - t.
+		t < 0.5 ifTrue: [ 4.0 * t * t * t ] ifFalse: [ 1.0 - (4.0 * u * u * u) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:02'!
+cubicOut
+	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:06'!
+expIn
+	^[ :t | 2.0 raisedTo: 10.0 * (t - 1.0) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:10'!
+expInOut
+	^[ :t |
+		t < 0.5 ifTrue: [ 0.5 * (2 raisedTo: 20.0 * (t - 0.5)) ]
+			ifFalse: [ 1.0 - (0.5 * (2 raisedTo: 20.0 * (0.5 - t))) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:14'!
+expOut
+	^[ :t | 1.0 - (2.0 raisedTo: t * -10.0) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:24'!
+linear
+	^[ :t | t ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:31'!
+quadIn
+	^[ :t | t * t ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:36'!
+quadInOut
+	^[ :t | | u |
+		u := 1.0 - t.
+		t < 0.5 ifTrue: [ 2.0 * t * t ] ifFalse: [ 1.0 - (2.0 * u * u) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:40'!
+quadOut
+	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:43'!
+quartIn
+	^[ :t | t * t * t * t ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:47'!
+quartInOut
+	^[ :t | | u |
+		u := 1.0 - t.
+		t < 0.5 ifTrue: [ 8.0 * t * t * t * t ] ifFalse: [ 1.0 - (8.0 * u * u * u * u) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:50'!
+quartOut
+	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u * u) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:53'!
+quintIn
+	^[ :t | t * t * t * t * t ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:26:57'!
+quintInOut
+	^[ :t | | u |
+		u := 1.0 - t.
+		t < 0.5 ifTrue: [ 16.0 * t * t * t * t * t ] ifFalse: [ 1.0 - (16.0 * u * u * u * u * u) ]
+	]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:27:00'!
+quintOut
+	^[ :t | | u | u := 1.0 - t. 1.0 - (u * u * u * u * u) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:27:03'!
+sineIn
+	^[ :t | 1.0 - (t * Float halfPi) cos ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:27:06'!
+sineInOut
+	^[ :t | 0.5 - ((t * Float pi) cos * 0.5) ]! !
+
+!AnimatedProperty class methodsFor: 'easing' stamp: 'hlsf 6/21/2020 17:27:10'!
+sineOut
+	^[ :t | (t * Float halfPi) sin ]! !
 
 !AnimationSupervisor class methodsFor: 'as yet unclassified' stamp: 'ThibaultRaffaillac 1/14/2017 17:21'!
 add: anim
@@ -918,8 +927,9 @@ object: anObject
 
 	object _ anObject! !
 
-!Object methodsFor: '*Animation' stamp: 'ThibaultRaffaillac 4/25/2017 19:53'!
+!Object methodsFor: '*Animation' stamp: 'hlsf 6/21/2020 17:31:22'!
 during: aDelay
+"We can't factor the code..."
 	| sender target selector |
 	sender := thisContext sender.
 	selector := sender selectorToSendOrSelf.
@@ -927,7 +937,18 @@ during: aDelay
 		[ self error: 'Use with single arg setter message only' ].
 	target := sender pop.
 	sender pc: sender followingPc.
-	^AnimatedProperty new receiver: target selector: selector argument: self during: aDelay! !
+	^AnimatedProperty new receiver: target selector: selector argument: self during: aDelay as: AnimatedProperty linear! !
+
+!Object methodsFor: '*Animation' stamp: 'hlsf 6/21/2020 17:22:15'!
+during: aDelay as: easing
+	| sender target selector |
+	sender := thisContext sender.
+	selector := sender selectorToSendOrSelf.
+	(sender willSend and: selector numArgs = 1) ifFalse:
+		[ self error: 'Use with single arg setter message only' ].
+	target := sender pop.
+	sender pc: sender followingPc.
+	^AnimatedProperty new receiver: target selector: selector argument: self during: aDelay as: easing! !
 
 !Float class methodsFor: '*Animation' stamp: 'ThibaultRaffaillac 10/1/2016 14:11'!
 newFrom: aValue
@@ -973,6 +994,10 @@ stop
 + aString
 	"Collections default to a per-element add"
 	^self, aString! !
+
+!SystemWindow methodsFor: '*Animation' stamp: 'hlsf 6/21/2020 17:21:20'!
+label: aString
+	self setLabel: aString ! !
 
 !WorldState methodsFor: '*Animation' stamp: 'ThibaultRaffaillac 10/5/2016 13:58'!
 runStepMethodsIn: aWorld
