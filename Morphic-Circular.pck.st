@@ -1,6 +1,7 @@
-'From Cuis 5.0 [latest update: #4219] on 15 June 2020 at 10:25:19 pm'!
+'From Cuis 5.0 [latest update: #4249] on 11 July 2020 at 12:24:18 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 32!
+!provides: 'Morphic-Circular' 1 33!
+!requires: 'Animation' 1 4 nil!
 !requires: 'VectorGraphics' 1 148 nil!
 SystemOrganization addCategory: #'Morphic-Circular'!
 
@@ -101,9 +102,21 @@ Feature require: 'Animation'.
 tools openAnimated . 
 !
 
-!CircularSubToolbarMorph commentStamp: '<historical>' prior: 0!
+!CircularSubToolbarMorph commentStamp: 'hlsf 7/11/2020 12:23:55' prior: 0!
 I am circular sub-toolbar. I am trigerred from a drop down chevron attached to a parent circular toolbar (the main one)
-- dropDown : the drop down chevron I was opened from!
+- dropDown : the drop down chevron I was opened from
+
+| tools icons someIcons |
+tools _ CircularToolbarMorph new buttonSize: 30; morphExtent: 300@300.
+tools color: (Color orange alpha: 0.8).
+someIcons _ {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon.}.
+icons _ {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon. Theme current pasteIcon. Theme current undoIcon. Theme current redoIcon. Theme current closeIcon. Theme current quitIcon}.
+icons do: [:icon | | button drop |
+	drop _ (button _ tools addButton: icon) addDropDown.
+	button setBalloonText: 'test'.
+	someIcons do: [: icn | (drop toolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
+	].
+tools openAnimated!
 
 !ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 6/12/2020 14:39:29'!
 buttonNormalForm
