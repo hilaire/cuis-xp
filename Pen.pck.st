@@ -1,6 +1,9 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3190] on 8 November 2017 at 3:43:04 pm'!
+'From Cuis 5.0 [latest update: #4253] on 21 July 2020 at 4:45:25 pm'!
 'Description Draw with a pen and messages as go: turn: etc.'!
-!provides: 'Pen' 1 2!
+!provides: 'Pen' 1 3!
+SystemOrganization addCategory: #Pen!
+
+
 !classDefinition: #Pen category: #Pen!
 BitBlt subclass: #Pen
 	instanceVariableNames: 'location direction penDown'
@@ -42,41 +45,6 @@ Transcript cr;
 
 Implementation note: Shouldn't we override #drawFrom:to:withFirstPoint: instead, and what about #drawLoopX:Y:? Aren't we missing those calls?!
 
-!Form methodsFor: '*Pen-filling' stamp: 'HilaireFernandes 11/8/2017 11:55:59'!
-findShapeAroundSeedBlock: seedBlock
-	"Build a shape that is black in any region marked by seedBlock. 
-	SeedBlock will be supplied a form, in which to blacken various
-	pixels as 'seeds'.  Then the seeds are smeared until 
-	there is no change in the smear when it fills the region, ie,
-	when smearing hits a black border and thus goes no further."
-	| smearForm previousSmear all count smearPort |
-	self depth > 1 ifTrue: [self halt]. "Only meaningful for B/W forms."
-	all := self boundingBox.
-	smearForm := Form extent: self extent.
-	smearPort := BitBlt toForm: smearForm.
-	seedBlock value: smearForm.		"Blacken seeds to be smeared"
-	smearPort copyForm: self to: 0 @ 0 rule: Form erase.  "Clear any in black"
-	previousSmear := smearForm copy.
-	count := 1.
-	[count = 10 and:   "check for no change every 10 smears"
-		[count := 1.
-		previousSmear copy: all from: 0 @ 0 in: smearForm rule: Form reverse.
-		previousSmear isAllWhite]]
-		whileFalse: 
-			[smearPort copyForm: smearForm to: 1 @ 0 rule: Form under.
-			smearPort copyForm: smearForm to: -1 @ 0 rule: Form under.
-			"After horiz smear, trim around the region border"
-			smearPort copyForm: self to: 0 @ 0 rule: Form erase.
-			smearPort copyForm: smearForm to: 0 @ 1 rule: Form under.
-			smearPort copyForm: smearForm to: 0 @ -1 rule: Form under.
-			"After vert smear, trim around the region border"
-			smearPort copyForm: self to: 0 @ 0 rule: Form erase.
-			count := count + 1.
-			count = 9 ifTrue: "Save penultimate smear for comparison"
-				[previousSmear copy: all from: 0 @ 0 in: smearForm rule: Form over]].
-	"Now paint the filled region in me with aHalftone"
-	^ smearForm! !
-
 !Pen methodsFor: 'operations' stamp: 'jm 4/28/1998 03:40'!
 color: aColorOrInteger
 	"Set the pen to the given color or to a color chosen from a fixed set of colors."
@@ -91,69 +59,11 @@ color: aColorOrInteger
 	self fillColor: c.
 ! !
 
-!Pen methodsFor: 'initialize-release' stamp: 'jm 4/28/1998 04:02'!
-defaultNib: widthInteger 
-	"Nib is the tip of a pen. This sets up the pen, with a nib of width widthInteger. You can also set the shape of the pen nib using:
-		roundNib: widthInteger, or
-		squareNib: widthInteger, or
-		sourceForm: aForm"
-"Example:
-	| bic |
-	bic := Pen new sourceForm: Cursor normal.
-	bic combinationRule: Form paint; turn: 90.
-	10 timesRepeat: [bic down; go: 3; up; go: 10]."
-
-	self color: Color black.
-	self squareNib: widthInteger.
-! !
-
-!Pen methodsFor: 'accessing'!
-direction
-	"Answer the receiver's current direction. 0 is towards the top of the
-	screen."
-
-	^direction! !
-
 !Pen methodsFor: 'operations'!
 down
 	"Set the state of the receiver's pen to down (drawing)."
 
 	penDown := true! !
-
-!Pen methodsFor: 'geometric designs' stamp: 'di 6/11/1998 22:01'!
-dragon: n  "Display restoreAfter: [Display fillWhite. Pen new dragon: 10]."
-	"Display restoreAfter: [Display fillWhite. 1 to: 4 do:
-				[:i | Pen new color: i; turn: 90*i; dragon: 10]]"
-	"Draw a dragon curve of order n in the center of the screen."
-	n = 0
-		ifTrue: [self go: 5]
-		ifFalse: [n > 0
-				ifTrue: [self dragon: n - 1; turn: 90; dragon: 1 - n]
-				ifFalse: [self dragon: -1 - n; turn: -90; dragon: 1 + n]]
-! !
-
-!Pen methodsFor: 'geometric designs' stamp: 'di 6/14/1998 13:42'!
-filberts: n side: s   "Display restoreAfter: [Pen new filberts: 4 side: 5]"
-	"Two Hilbert curve fragments form a Hilbert tile. Draw four interlocking 
-	tiles of order n and sides length s."
-	| n2 |
-	Display fillWhite.
-	n2 := 1 bitShift: n - 1.
-	self up; go: 0 - n2 * s; down.
-	1 to: 4 do: 
-		[:i | 
-		self fill: [:p |
-				p hilbert: n side: s.
-				p go: s.
-				p hilbert: n side: s.
-				p go: s.
-				p up.
-				p go: n2 - 1 * s.
-				p turn: -90.
-				p go: n2 * s.
-				p turn: 180.
-				p down]
-			color: (Color perform: (#(yellow red green blue) at: i))]! !
 
 !Pen methodsFor: 'operations' stamp: 'HilaireFernandes 11/8/2017 12:11:52'!
 fill: drawBlock color: color
@@ -198,6 +108,156 @@ goto: aPoint
 	not to overstrike at line junctions.  At the same time, place should draw
 	a single dot if the pen is down, as should down (put-pen-down) if it
 	was not down before."! !
+
+!Pen methodsFor: 'operations'!
+home
+	"Place the receiver at the center of its frame."
+	location := destForm boundingBox center! !
+
+!Pen methodsFor: 'operations'!
+north
+	"Set the receiver's direction to facing toward the top of the display screen."
+
+	direction := 270! !
+
+!Pen methodsFor: 'operations'!
+place: aPoint 
+	"Set the receiver at position aPoint. No lines are drawn."
+
+	location := aPoint! !
+
+!Pen methodsFor: 'operations' stamp: 'hlsf 7/21/2020 16:45:09'!
+print: str withFont: font
+	"Print the given string in the given font at the current heading"
+	| lineStart scale wasDown |
+	scale := sourceForm width.
+	wasDown := penDown.
+	lineStart := location.
+	str do:
+		[:char |
+		char = Character cr ifTrue:
+			[self place: lineStart; up; turn: 90; go: font height*scale; turn: -90; down]
+		ifFalse:
+			[ | charStart pix rowStart form backgroundCode |
+			form := font glyphAt: char.
+			backgroundCode := 1<< (form depth // 3 * 3) - 1.
+			charStart := location.
+wasDown ifTrue: [
+			self up; turn: -90; go: font descent*scale; turn: 90; down.
+			0 to: form height-1 do:
+				[:y |
+				rowStart := location.
+				pix := RunArray newFrom:
+					((0 to: form width-1) collect: [:x | form pixelValueAt: x@y]).
+				pix runs with: pix values do:
+					[:run :value |
+					value = backgroundCode
+						ifTrue: [self up; go: run*scale; down]
+						ifFalse: [self go: run*scale]].
+				self place: rowStart; up; turn: 90; go: scale; turn: -90; down].
+].
+			self place: charStart; up; go: form width*scale; down].
+			].
+	wasDown ifFalse: [self up]
+"
+Display restoreAfter:
+[Pen new squareNib: 2; color: Color red; turn: 45;
+	print: 'The owl and the pussycat went to sea
+in a beautiful pea green boat.' withFont:  FontFamily defaultFamilyAndPointSize ]
+"! !
+
+!Pen methodsFor: 'operations'!
+turn: degrees 
+	"Change the direction that the receiver faces by an amount equal to the 
+	argument, degrees."
+
+	direction := direction + degrees! !
+
+!Pen methodsFor: 'operations'!
+up
+	"Set the state of the receiver's pen to up (no drawing)."
+
+	penDown := false! !
+
+!Pen methodsFor: 'initialize-release' stamp: 'hlsf 7/21/2020 16:41:08'!
+defaultNib: widthInteger 
+	"Nib is the tip of a pen. This sets up the pen, with a nib of width widthInteger. You can also set the shape of the pen nib using:
+		roundNib: widthInteger, or
+		squareNib: widthInteger, or
+		sourceForm: aForm"
+"Example:
+	| bic |
+	bic := Pen new sourceForm: Cursor normalCursor.
+	bic combinationRule: Form paint; turn: 90.
+	10 timesRepeat: [bic down; go: 3; up; go: 10]."
+
+	self color: Color black.
+	self squareNib: widthInteger.
+! !
+
+!Pen methodsFor: 'initialize-release' stamp: 'jm 4/28/1998 04:03'!
+roundNib: diameter
+	"Makes this pen draw with a round dot of the given diameter."
+
+	self sourceForm: (Form dotOfSize: diameter).
+	combinationRule := Form paint.
+! !
+
+!Pen methodsFor: 'initialize-release' stamp: 'jm 4/28/1998 04:03'!
+squareNib: widthInteger 
+	"Makes this pen draw with a square nib of the given width."
+
+	self sourceForm: (Form extent: widthInteger @widthInteger) fillBlack.
+	self combinationRule: Form over.  "a bit faster than paint mode"
+! !
+
+!Pen methodsFor: 'accessing'!
+direction
+	"Answer the receiver's current direction. 0 is towards the top of the
+	screen."
+
+	^direction! !
+
+!Pen methodsFor: 'accessing'!
+location
+	"Answer where the receiver is currently located."
+
+	^location! !
+
+!Pen methodsFor: 'geometric designs' stamp: 'di 6/11/1998 22:01'!
+dragon: n  "Display restoreAfter: [Display fillWhite. Pen new dragon: 10]."
+	"Display restoreAfter: [Display fillWhite. 1 to: 4 do:
+				[:i | Pen new color: i; turn: 90*i; dragon: 10]]"
+	"Draw a dragon curve of order n in the center of the screen."
+	n = 0
+		ifTrue: [self go: 5]
+		ifFalse: [n > 0
+				ifTrue: [self dragon: n - 1; turn: 90; dragon: 1 - n]
+				ifFalse: [self dragon: -1 - n; turn: -90; dragon: 1 + n]]
+! !
+
+!Pen methodsFor: 'geometric designs' stamp: 'di 6/14/1998 13:42'!
+filberts: n side: s   "Display restoreAfter: [Pen new filberts: 4 side: 5]"
+	"Two Hilbert curve fragments form a Hilbert tile. Draw four interlocking 
+	tiles of order n and sides length s."
+	| n2 |
+	Display fillWhite.
+	n2 := 1 bitShift: n - 1.
+	self up; go: 0 - n2 * s; down.
+	1 to: 4 do: 
+		[:i | 
+		self fill: [:p |
+				p hilbert: n side: s.
+				p go: s.
+				p hilbert: n side: s.
+				p go: s.
+				p up.
+				p go: n2 - 1 * s.
+				p turn: -90.
+				p go: n2 * s.
+				p turn: 180.
+				p down]
+			color: (Color perform: (#(yellow red green blue) at: i))]! !
 
 !Pen methodsFor: 'geometric designs'!
 hilbert: n side: s 
@@ -245,23 +305,6 @@ hilberts: n   "Display restoreAfter: [Display fillWhite.  Pen new hilberts: 5]"
 		self hilbert: i side: s.
 		self go: s]! !
 
-!Pen methodsFor: 'operations'!
-home
-	"Place the receiver at the center of its frame."
-	location := destForm boundingBox center! !
-
-!Pen methodsFor: 'accessing'!
-location
-	"Answer where the receiver is currently located."
-
-	^location! !
-
-!Pen methodsFor: 'private' stamp: 'di 6/11/1998 16:09'!
-location: aPoint direction: aFloat penDown: aBoolean
-	location := aPoint.
-	direction := aFloat.
-	penDown := aBoolean! !
-
 !Pen methodsFor: 'geometric designs' stamp: 'HilaireFernandes 11/8/2017 15:39:15'!
 mandala: npoints
 	"Display restoreAfter: [Pen new mandala: 30]"
@@ -282,74 +325,6 @@ mandala: npoints
 			self goto: (points at: j + i - 1 \\ npoints + 1)]].
 	ImageMorph new image: Display copy; openInWorld! !
 
-!Pen methodsFor: 'operations'!
-north
-	"Set the receiver's direction to facing toward the top of the display screen."
-
-	direction := 270! !
-
-!Pen methodsFor: 'operations'!
-place: aPoint 
-	"Set the receiver at position aPoint. No lines are drawn."
-
-	location := aPoint! !
-
-!Pen methodsFor: 'operations' stamp: 'tpr 3/26/2013 11:12'!
-print: str withFont: font
-	"Print the given string in the given font at the current heading"
-	| lineStart scale wasDown |
-	scale := sourceForm width.
-	wasDown := penDown.
-	lineStart := location.
-	str do:
-		[:char |
-		char = Character cr ifTrue:
-			[self place: lineStart; up; turn: 90; go: font height*scale; turn: -90; down]
-		ifFalse:
-			[ | charStart pix rowStart form backgroundCode |
-			form := font characterFormAt: char.
-			backgroundCode := 1<< (form depth // 3 * 3) - 1.
-			charStart := location.
-wasDown ifTrue: [
-			self up; turn: -90; go: font descent*scale; turn: 90; down.
-			0 to: form height-1 do:
-				[:y |
-				rowStart := location.
-				pix := RunArray newFrom:
-					((0 to: form width-1) collect: [:x | form pixelValueAt: x@y]).
-				pix runs with: pix values do:
-					[:run :value |
-					value = backgroundCode
-						ifTrue: [self up; go: run*scale; down]
-						ifFalse: [self go: run*scale]].
-				self place: rowStart; up; turn: 90; go: scale; turn: -90; down].
-].
-			self place: charStart; up; go: form width*scale; down].
-			].
-	wasDown ifFalse: [self up]
-"
-Display restoreAfter:
-[Pen new squareNib: 2; color: Color red; turn: 45;
-	print: 'The owl and the pussycat went to sea
-in a beautiful pea green boat.' withFont: TextStyle defaultFont]
-"! !
-
-!Pen methodsFor: 'initialize-release' stamp: 'jm 4/28/1998 04:03'!
-roundNib: diameter
-	"Makes this pen draw with a round dot of the given diameter."
-
-	self sourceForm: (Form dotOfSize: diameter).
-	combinationRule := Form paint.
-! !
-
-!Pen methodsFor: 'private'!
-sourceForm: aForm
-	(aForm depth = 1 and: [destForm depth > 1])
-		ifTrue: ["Map 1-bit source to all ones for color mask"
-				colorMap := Bitmap with: 0 with: 16rFFFFFFFF]
-		ifFalse: [colorMap := nil].
-	^ super sourceForm: aForm! !
-
 !Pen methodsFor: 'geometric designs' stamp: 'jm 5/6/1998 22:26'!
 spiral: n angle: a 
 	"Draw a double squiral (see Papert, MindStorms), where each design is made
@@ -363,27 +338,6 @@ spiral: n angle: a
 	Display restoreAfter: [
 		Display fillWhite. Pen new spiral: 200 angle: 89; home; spiral: 200 angle: -89].
 "! !
-
-!Pen methodsFor: 'initialize-release' stamp: 'jm 4/28/1998 04:03'!
-squareNib: widthInteger 
-	"Makes this pen draw with a square nib of the given width."
-
-	self sourceForm: (Form extent: widthInteger @widthInteger) fillBlack.
-	self combinationRule: Form over.  "a bit faster than paint mode"
-! !
-
-!Pen methodsFor: 'operations'!
-turn: degrees 
-	"Change the direction that the receiver faces by an amount equal to the 
-	argument, degrees."
-
-	direction := direction + degrees! !
-
-!Pen methodsFor: 'operations'!
-up
-	"Set the state of the receiver's pen to up (no drawing)."
-
-	penDown := false! !
 
 !Pen methodsFor: 'geometric designs' stamp: 'HilaireFernandes 11/8/2017 11:37:38'!
 web   "Display restoreAfter: [Pen new web]"
@@ -408,6 +362,20 @@ web   "Display restoreAfter: [Pen new web]"
 			self goto: ancientPoint.
 			lastPoint := newPoint.
 			history addLast: filter ] ] ] repeat! !
+
+!Pen methodsFor: 'private' stamp: 'di 6/11/1998 16:09'!
+location: aPoint direction: aFloat penDown: aBoolean
+	location := aPoint.
+	direction := aFloat.
+	penDown := aBoolean! !
+
+!Pen methodsFor: 'private'!
+sourceForm: aForm
+	(aForm depth = 1 and: [destForm depth > 1])
+		ifTrue: ["Map 1-bit source to all ones for color mask"
+				colorMap := Bitmap with: 0 with: 16rFFFFFFFF]
+		ifFalse: [colorMap := nil].
+	^ super sourceForm: aForm! !
 
 !Pen class methodsFor: 'examples' stamp: 'jm 5/6/1998 22:28'!
 example
@@ -489,22 +457,6 @@ inkBrush
 					pen place: p]]].
 ! !
 
-!Pen class methodsFor: 'instance creation'!
-new
-	^ self newOnForm: Display! !
-
-!Pen class methodsFor: 'instance creation'!
-newOnForm: aForm
-	| pen |
-	pen := super new.
-	pen setDestForm: aForm.
-	pen sourceOrigin: 0@0.
-	pen home.
-	pen defaultNib: 1.
-	pen north.
-	pen down.
-	^ pen! !
-
 !Pen class methodsFor: 'tablet drawing examples' stamp: 'nice 12/27/2009 03:11'!
 simplePressurePen
 	"An example of using a pressure sensitive pen to control the thickness of the pen. This requires the optional tablet support primitives which may not be supported on all platforms. Works best in full screen mode. Shift-mouse to exit." 
@@ -577,6 +529,22 @@ testTabletTracking
 					pen place: p]]].
 ! !
 
+!Pen class methodsFor: 'instance creation'!
+new
+	^ self newOnForm: Display! !
+
+!Pen class methodsFor: 'instance creation'!
+newOnForm: aForm
+	| pen |
+	pen := super new.
+	pen setDestForm: aForm.
+	pen sourceOrigin: 0@0.
+	pen home.
+	pen defaultNib: 1.
+	pen north.
+	pen down.
+	^ pen! !
+
 !PenPointRecorder methodsFor: 'line drawing' stamp: 'md 11/14/2003 16:56'!
 drawFrom: p1 to: p2
 	"Overridden to skip drawing but track bounds of the region traversed."
@@ -587,3 +555,38 @@ drawFrom: p1 to: p2
 !PenPointRecorder methodsFor: 'accessing' stamp: 'di 6/21/1998 09:35'!
 points
 	^ points! !
+
+!Form methodsFor: '*Pen-filling' stamp: 'HilaireFernandes 11/8/2017 11:55:59'!
+findShapeAroundSeedBlock: seedBlock
+	"Build a shape that is black in any region marked by seedBlock. 
+	SeedBlock will be supplied a form, in which to blacken various
+	pixels as 'seeds'.  Then the seeds are smeared until 
+	there is no change in the smear when it fills the region, ie,
+	when smearing hits a black border and thus goes no further."
+	| smearForm previousSmear all count smearPort |
+	self depth > 1 ifTrue: [self halt]. "Only meaningful for B/W forms."
+	all := self boundingBox.
+	smearForm := Form extent: self extent.
+	smearPort := BitBlt toForm: smearForm.
+	seedBlock value: smearForm.		"Blacken seeds to be smeared"
+	smearPort copyForm: self to: 0 @ 0 rule: Form erase.  "Clear any in black"
+	previousSmear := smearForm copy.
+	count := 1.
+	[count = 10 and:   "check for no change every 10 smears"
+		[count := 1.
+		previousSmear copy: all from: 0 @ 0 in: smearForm rule: Form reverse.
+		previousSmear isAllWhite]]
+		whileFalse: 
+			[smearPort copyForm: smearForm to: 1 @ 0 rule: Form under.
+			smearPort copyForm: smearForm to: -1 @ 0 rule: Form under.
+			"After horiz smear, trim around the region border"
+			smearPort copyForm: self to: 0 @ 0 rule: Form erase.
+			smearPort copyForm: smearForm to: 0 @ 1 rule: Form under.
+			smearPort copyForm: smearForm to: 0 @ -1 rule: Form under.
+			"After vert smear, trim around the region border"
+			smearPort copyForm: self to: 0 @ 0 rule: Form erase.
+			count := count + 1.
+			count = 9 ifTrue: "Save penultimate smear for comparison"
+				[previousSmear copy: all from: 0 @ 0 in: smearForm rule: Form over]].
+	"Now paint the filled region in me with aHalftone"
+	^ smearForm! !
