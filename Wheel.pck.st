@@ -1,13 +1,16 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3190] on 5 November 2017 at 4:46:23 pm'!
+'From Cuis 5.0 [latest update: #4413] on 22 October 2020 at 12:21:21 pm'!
 'Description Please enter a description for this package'!
-!provides: 'Wheel' 1 1!
-!classDefinition: #WheelMorph category: #Wheel!
-BorderedRectMorph subclass: #WheelMorph
+!provides: 'Wheel' 1 2!
+SystemOrganization addCategory: 'Wheel'!
+
+
+!classDefinition: #WheelMorph category: 'Wheel'!
+WidgetMorph subclass: #WheelMorph
 	instanceVariableNames: 'target actionSelector factor circular old angle maxAngle lastRedraw'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Wheel'!
-!classDefinition: 'WheelMorph class' category: #Wheel!
+!classDefinition: 'WheelMorph class' category: 'Wheel'!
 WheelMorph class
 	instanceVariableNames: ''!
 
@@ -33,6 +36,43 @@ actionSelector: aSymbol
 
 ! !
 
+!WheelMorph methodsFor: 'accessing'!
+angle
+	^angle! !
+
+!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:00'!
+angle: aNumber
+	angle _ aNumber! !
+
+!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 16:42:45'!
+color: aColor
+	super color: aColor.
+	self borderColor: aColor muchDarker! !
+
+!WheelMorph methodsFor: 'accessing'!
+factor
+	^factor! !
+
+!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:05'!
+factor: aFloat
+	factor _ aFloat! !
+
+!WheelMorph methodsFor: 'accessing'!
+maxAngle
+	^maxAngle! !
+
+!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:10'!
+maxAngle: aNumber
+	maxAngle _ aNumber! !
+
+!WheelMorph methodsFor: 'accessing'!
+target
+	^target! !
+
+!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:16'!
+target: aTargetObject
+	target _ aTargetObject! !
+
 !WheelMorph methodsFor: 'private' stamp: 'HilaireFernandes 11/5/2017 12:15:57'!
 addAngle: aNumber
 	| new |
@@ -44,14 +84,6 @@ addAngle: aNumber
 		lastRedraw _ 0.
 		self changed.
 		self redrawNeeded]! !
-
-!WheelMorph methodsFor: 'accessing'!
-angle
-	^angle! !
-
-!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:00'!
-angle: aNumber
-	angle _ aNumber! !
 
 !WheelMorph methodsFor: 'properties' stamp: 'HilaireFernandes 11/5/2017 11:10:42'!
 beCircular
@@ -66,17 +98,28 @@ beHorizontal
 beLinear
 	circular _ false! !
 
-!WheelMorph methodsFor: 'properties' stamp: 'HilaireFernandes 11/5/2017 11:11:14'!
+!WheelMorph methodsFor: 'properties' stamp: 'hlsf 10/22/2020 12:18:53'!
 beVertical
 	self isHorizontal
-		ifTrue: [extent  _ extent transposed] ! !
+		ifTrue: [self morphExtent: extent transposed] ! !
 
-!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 16:42:45'!
-color: aColor
-	super color: aColor.
-	self borderColor: aColor muchDarker! !
+!WheelMorph methodsFor: 'properties'!
+isCircular
+	^circular! !
 
-!WheelMorph methodsFor: 'event handling' stamp: 'HilaireFernandes 11/5/2017 11:14:14'!
+!WheelMorph methodsFor: 'properties' stamp: 'hlsf 10/22/2020 12:17:53'!
+isHorizontal
+	^ extent x > extent y! !
+
+!WheelMorph methodsFor: 'properties'!
+isLinear
+	^circular not! !
+
+!WheelMorph methodsFor: 'properties'!
+isVertical
+	^self isHorizontal not! !
+
+!WheelMorph methodsFor: 'event handling' stamp: 'hlsf 10/22/2020 12:19:50'!
 doTargetAction: cursorPoint
 	| new delta |
 	self isHorizontal
@@ -86,10 +129,26 @@ doTargetAction: cursorPoint
 	delta isZero ifTrue: [^self].
 	self addAngle: delta.
 	(target ~~ nil and: [actionSelector ~~ nil]) ifTrue: [
-		Cursor normal showWhile: [
+		Cursor normalCursor showWhile: [
 			target perform: actionSelector withArguments: (Array with: (delta * self factor))]].
 	old _ new.
 ! !
+
+!WheelMorph methodsFor: 'event handling'!
+handlesMouseDown: evt
+	^true
+! !
+
+!WheelMorph methodsFor: 'event handling' stamp: 'HilaireFernandes 11/5/2017 12:12:54'!
+mouseButton1Down: evt localPosition: position
+	self isHorizontal
+		ifTrue: [old _ position x]
+		ifFalse: [old _ position y].! !
+
+!WheelMorph methodsFor: 'event handling' stamp: 'HilaireFernandes 11/5/2017 12:12:40'!
+mouseMove: evt localPosition: position
+	(evt anyButtonPressed)
+		ifTrue: [self doTargetAction: position]! !
 
 !WheelMorph methodsFor: 'drawing' stamp: 'HilaireFernandes 11/5/2017 16:44:01'!
 drawOn: aCanvas
@@ -116,19 +175,6 @@ drawOn: aCanvas
 			aCanvas fillRectangle: (Rectangle origin: x0@(y-1) corner: x1@y) color: borderColor]
 	]! !
 
-!WheelMorph methodsFor: 'accessing'!
-factor
-	^factor! !
-
-!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:05'!
-factor: aFloat
-	factor _ aFloat! !
-
-!WheelMorph methodsFor: 'event handling'!
-handlesMouseDown: evt
-	^true
-! !
-
 !WheelMorph methodsFor: 'initialization' stamp: 'HilaireFernandes 11/5/2017 12:26:42'!
 initialize
 	super initialize.
@@ -139,46 +185,3 @@ initialize
 	self beCircular.
 	self color: Color lightGray.
 	lastRedraw := 0.! !
-
-!WheelMorph methodsFor: 'properties'!
-isCircular
-	^circular! !
-
-!WheelMorph methodsFor: 'properties' stamp: 'HilaireFernandes 11/5/2017 11:33:06'!
-isHorizontal
-	^ self morphBounds isWide! !
-
-!WheelMorph methodsFor: 'properties'!
-isLinear
-	^circular not! !
-
-!WheelMorph methodsFor: 'properties'!
-isVertical
-	^self isHorizontal not! !
-
-!WheelMorph methodsFor: 'accessing'!
-maxAngle
-	^maxAngle! !
-
-!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:10'!
-maxAngle: aNumber
-	maxAngle _ aNumber! !
-
-!WheelMorph methodsFor: 'event handling' stamp: 'HilaireFernandes 11/5/2017 12:12:54'!
-mouseButton1Down: evt localPosition: position
-	self isHorizontal
-		ifTrue: [old _ position x]
-		ifFalse: [old _ position y].! !
-
-!WheelMorph methodsFor: 'event handling' stamp: 'HilaireFernandes 11/5/2017 12:12:40'!
-mouseMove: evt localPosition: position
-	(evt anyButtonPressed)
-		ifTrue: [self doTargetAction: position]! !
-
-!WheelMorph methodsFor: 'accessing'!
-target
-	^target! !
-
-!WheelMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 11/5/2017 11:09:16'!
-target: aTargetObject
-	target _ aTargetObject! !

@@ -1,13 +1,16 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3190] on 28 October 2017 at 4:59:08 pm'!
+'From Cuis 5.0 [latest update: #4413] on 22 October 2020 at 12:22:29 pm'!
 'Description A morph simulating a dice with an arbitrary number of faces, bellow 9.'!
-!provides: 'Dice' 1 0!
-!classDefinition: #DiceMorph category: #Dice!
-RectangleLikeMorph subclass: #DiceMorph
+!provides: 'Dice' 1 1!
+SystemOrganization addCategory: 'Dice'!
+
+
+!classDefinition: #DiceMorph category: 'Dice'!
+WidgetMorph subclass: #DiceMorph
 	instanceVariableNames: 'faces value isRolling'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dice'!
-!classDefinition: 'DiceMorph class' category: #Dice!
+!classDefinition: 'DiceMorph class' category: 'Dice'!
 DiceMorph class
 	instanceVariableNames: ''!
 
@@ -85,6 +88,10 @@ faces: integer
 	faces _ integer min: 9.
 	self redrawNeeded ! !
 
+!DiceMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 10/28/2017 15:40:46'!
+value
+	^ value! !
+
 !DiceMorph methodsFor: 'initialization' stamp: 'HilaireFernandes 10/28/2017 16:48:31'!
 initialize
 	super initialize.
@@ -111,10 +118,6 @@ stepTime
 stopRolling
 	isRolling _ false.
 	self stopStepping! !
-
-!DiceMorph methodsFor: 'accessing' stamp: 'HilaireFernandes 10/28/2017 15:40:46'!
-value
-	^ value! !
 
 !DiceMorph methodsFor: 'stepping' stamp: 'HilaireFernandes 10/28/2017 16:46:00'!
 wantsSteps

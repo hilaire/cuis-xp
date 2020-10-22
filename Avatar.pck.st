@@ -1,13 +1,16 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3190] on 20 October 2017 at 9:37:21 pm'!
+'From Cuis 5.0 [latest update: #4413] on 22 October 2020 at 11:47:07 am'!
 'Description A blinking avatar with eyes following the mouse cursor.'!
-!provides: 'Avatar' 1 2!
-!classDefinition: #AvatarMorph category: #Avatar!
-EllipseMorph subclass: #AvatarMorph
+!provides: 'Avatar' 1 3!
+SystemOrganization addCategory: 'Avatar'!
+
+
+!classDefinition: #AvatarMorph category: 'Avatar'!
+WidgetMorph subclass: #AvatarMorph
 	instanceVariableNames: 'blink'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Avatar'!
-!classDefinition: 'AvatarMorph class' category: #Avatar!
+!classDefinition: 'AvatarMorph class' category: 'Avatar'!
 AvatarMorph class
 	instanceVariableNames: ''!
 

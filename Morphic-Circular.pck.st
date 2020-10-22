@@ -1,61 +1,65 @@
-'From Cuis 5.0 [latest update: #4249] on 11 July 2020 at 12:24:18 pm'!
+'From Cuis 5.0 [latest update: #4413] on 22 October 2020 at 12:11:21 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 33!
+!provides: 'Morphic-Circular' 1 34!
 !requires: 'Animation' 1 4 nil!
 !requires: 'VectorGraphics' 1 148 nil!
-SystemOrganization addCategory: #'Morphic-Circular'!
+!requires: 'Collections-CompactArrays' 1 12 nil!
+SystemOrganization addCategory: 'Morphic-Circular'!
 
 
-!classDefinition: #ChevronMorph category: #'Morphic-Circular'!
-PluggableButtonMorph subclass: #ChevronMorph
-	instanceVariableNames: 'aperture shift innerRadius radius corners bounds buttonNormalForm buttonOverForm center'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Morphic-Circular'!
-!classDefinition: 'ChevronMorph class' category: #'Morphic-Circular'!
-ChevronMorph class
-	instanceVariableNames: ''!
-
-!classDefinition: #DropDownChevronMorph category: #'Morphic-Circular'!
-ChevronMorph subclass: #DropDownChevronMorph
-	instanceVariableNames: 'activated chevron toolbar'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Morphic-Circular'!
-!classDefinition: 'DropDownChevronMorph class' category: #'Morphic-Circular'!
-DropDownChevronMorph class
-	instanceVariableNames: ''!
-
-!classDefinition: #SketchMorph category: #'Morphic-Circular'!
+!classDefinition: #SketchMorph category: 'Morphic-Circular'!
 ImageMorph subclass: #SketchMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
-!classDefinition: 'SketchMorph class' category: #'Morphic-Circular'!
+!classDefinition: 'SketchMorph class' category: 'Morphic-Circular'!
 SketchMorph class
 	instanceVariableNames: ''!
 
-!classDefinition: #CircularToolbarMorph category: #'Morphic-Circular'!
-RectangleLikeMorph subclass: #CircularToolbarMorph
+!classDefinition: #ChevronMorph category: 'Morphic-Circular'!
+PluggableButtonMorph subclass: #ChevronMorph
+	instanceVariableNames: 'aperture shift innerRadius radius corners bounds buttonNormalForm buttonOverForm center'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-Circular'!
+!classDefinition: 'ChevronMorph class' category: 'Morphic-Circular'!
+ChevronMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #DropDownChevronMorph category: 'Morphic-Circular'!
+ChevronMorph subclass: #DropDownChevronMorph
+	instanceVariableNames: 'activated chevron toolbar'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-Circular'!
+!classDefinition: 'DropDownChevronMorph class' category: 'Morphic-Circular'!
+DropDownChevronMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #CircularToolbarMorph category: 'Morphic-Circular'!
+WidgetMorph subclass: #CircularToolbarMorph
 	instanceVariableNames: 'buttonSize aperture innerRadius shift'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
-!classDefinition: 'CircularToolbarMorph class' category: #'Morphic-Circular'!
+!classDefinition: 'CircularToolbarMorph class' category: 'Morphic-Circular'!
 CircularToolbarMorph class
 	instanceVariableNames: ''!
 
-!classDefinition: #CircularSubToolbarMorph category: #'Morphic-Circular'!
+!classDefinition: #CircularSubToolbarMorph category: 'Morphic-Circular'!
 CircularToolbarMorph subclass: #CircularSubToolbarMorph
 	instanceVariableNames: 'dropDown'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
-!classDefinition: 'CircularSubToolbarMorph class' category: #'Morphic-Circular'!
+!classDefinition: 'CircularSubToolbarMorph class' category: 'Morphic-Circular'!
 CircularSubToolbarMorph class
 	instanceVariableNames: ''!
 
+
+!SketchMorph commentStamp: '<historical>' prior: 0!
+I am an image morph with a modifiable extent.!
 
 !ChevronMorph commentStamp: 'hlsf 6/6/2020 22:11:24' prior: 0!
 I am a button for a circular morph. I look like a truncated section of a circle, I am nammed chevron as a shorter name.
@@ -70,9 +74,6 @@ I  am inserted in a cicular toolbar of the given radius.
 I am a small drop down chevron. The user clicks me to open a sub toolbar.
 - activated: true when I have been clicked, those a sub circular toolbar should show up
 - chevron: the chevron I am positionned close to!
-
-!SketchMorph commentStamp: '<historical>' prior: 0!
-I am an image morph with a modifiable extent.!
 
 !CircularToolbarMorph commentStamp: '<historical>' prior: 0!
 - buttonSize: computed extent from the icon size (square)
@@ -117,6 +118,30 @@ icons do: [:icon | | button drop |
 	someIcons do: [: icn | (drop toolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
 	].
 tools openAnimated!
+
+!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:10:14'!
+drawOn: aCanvas
+	aCanvas image: (image magnifyTo: extent) at: self morphTopLeft! !
+
+!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:08:37'!
+minimumExtent
+	^ `1@1`! !
+
+!SketchMorph methodsFor: 'geometry' stamp: 'hlsf 5/29/2020 12:09:05'!
+morphExtent: newExtent
+	"assume it is always in our coordinates!!"
+	| oldBoundsInWorld |
+	self flag: #jmvVer2.
+	extent = newExtent ifFalse: [
+		"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
+		oldBoundsInWorld _ self morphBoundsInWorld.
+		(self privateExtent: newExtent) ifTrue: [
+			"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
+			oldBoundsInWorld ifNotNil: [
+				self invalidateDisplayRect: oldBoundsInWorld from: nil ].
+			self someSubmorphPositionOrExtentChanged.
+			owner ifNotNil: [ owner someSubmorphPositionOrExtentChanged ].
+			self redrawNeeded ]]! !
 
 !ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 6/12/2020 14:39:29'!
 buttonNormalForm
@@ -215,10 +240,10 @@ addDropDown
 	^ newDropDown 
 	! !
 
-!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 6/6/2020 22:10:55'!
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/22/2020 12:09:23'!
 initialize
 	super initialize.
-	corners _ FloatPointArray new: 8! !
+	corners _ Float32PointArray new: 8! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 6/9/2020 18:11:01'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
@@ -475,30 +500,6 @@ openSubToolbar
 			owner addMorphBack: self toolbar.
 			self toolbar morphCenter: owner center ].
 	activated _ true.! !
-
-!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:10:14'!
-drawOn: aCanvas
-	aCanvas image: (image magnifyTo: extent) at: self morphTopLeft! !
-
-!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:08:37'!
-minimumExtent
-	^ `1@1`! !
-
-!SketchMorph methodsFor: 'geometry' stamp: 'hlsf 5/29/2020 12:09:05'!
-morphExtent: newExtent
-	"assume it is always in our coordinates!!"
-	| oldBoundsInWorld |
-	self flag: #jmvVer2.
-	extent = newExtent ifFalse: [
-		"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
-		oldBoundsInWorld _ self morphBoundsInWorld.
-		(self privateExtent: newExtent) ifTrue: [
-			"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
-			oldBoundsInWorld ifNotNil: [
-				self invalidateDisplayRect: oldBoundsInWorld from: nil ].
-			self someSubmorphPositionOrExtentChanged.
-			owner ifNotNil: [ owner someSubmorphPositionOrExtentChanged ].
-			self redrawNeeded ]]! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 20:04:15'!
 addButton: icon
