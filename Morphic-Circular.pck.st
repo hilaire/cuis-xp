@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4508] on 3 January 2021 at 5:47:28 pm'!
+'From Cuis 5.0 [latest update: #4508] on 3 January 2021 at 9:21:09 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 13!
+!provides: 'Morphic-Circular' 1 15!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -154,14 +154,12 @@ drawMyShapeOn: canvas with: background
 			abs_ArcToX: (vertices floatAt: 1) y: (vertices floatAt: 2) 
 				radiusX: innerRadius radiusY: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true]! !
 
-!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 12/31/2020 19:01:31'!
+!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 21:08:31'!
 drawOn: canvas
-" 	aCanvas 	image: (self mouseIsOver ifTrue:[ self buttonOverForm] ifFalse: [self buttonNormalForm])
-		at: `0@0`.
-"		
 	self mouseIsOver 
 		ifTrue:  [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
-		ifFalse: [self drawMyShapeOn: canvas with: color]! !
+		ifFalse: [self drawMyShapeOn: canvas with: color].
+	icon ifNotNil: [canvas image: icon at: self center - (icon extent // 2)]! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 12/31/2020 12:59:19'!
 dropDown
@@ -268,6 +266,11 @@ isDropDownChevron
 isOnSubToolbar
 	^ owner isSubToolbar ! !
 
+!ChevronMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/3/2021 20:56:13'!
+morphContainsPoint: aLocalPoint
+"Pass thru for the pluggableButton"
+	^ true! !
+
 !ChevronMorph class methodsFor: 'instance creation' stamp: 'hlsf 1/3/2021 16:50:11'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
 	^ self new 
@@ -323,7 +326,7 @@ chevron
 chevron: aChevron
 	chevron _ aChevron ! !
 
-!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 17:41:43'!
+!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 20:35:48'!
 toolbar
 	^ toolbar ifNil: [
 		toolbar _ CircularSubToolbarMorph new
@@ -404,6 +407,10 @@ chevronsDo: aBlock
 	self submorphs 
 		select: [:each | each isChevron] 
 		thenDo: [:aChevron | aBlock value: aChevron]! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 20:35:17'!
+color
+	^ color ! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 12/31/2020 16:21:40'!
 color: aColor
@@ -512,18 +519,3 @@ dropDown: aDropDownChevron
 !CircularSubToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/12/2020 11:53:08'!
 gap
 	^ `1 degreesToRadians`! !
-
-!RectangleLikeMorph methodsFor: '*Morphic-Circular' stamp: 'hlsf 6/14/2020 20:31:46'!
-center
-"center positionning in morph coordinate"
-	^ extent // 2! !
-
-!RectangleLikeMorph methodsFor: '*Morphic-Circular' stamp: 'hlsf 6/7/2020 16:15:22'!
-morphCenter
-"We want float computation
-Center positionning in its parents morph"
-	^ self morphPosition + (extent // 2)! !
-
-!RectangleLikeMorph methodsFor: '*Morphic-Circular' stamp: 'hlsf 6/7/2020 16:14:07'!
-morphCenter: aPoint 
-	self morphPosition: aPoint - (extent // 2)! !
