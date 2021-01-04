@@ -1,20 +1,10 @@
-'From Cuis 5.0 [latest update: #4508] on 3 January 2021 at 9:21:09 pm'!
+'From Cuis 5.0 [latest update: #4508] on 4 January 2021 at 11:47:34 am'!
 'Description '!
-!provides: 'Morphic-Circular' 1 15!
+!provides: 'Morphic-Circular' 1 17!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
 
-
-!classDefinition: #SketchMorph category: 'Morphic-Circular'!
-ImageMorph subclass: #SketchMorph
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Morphic-Circular'!
-!classDefinition: 'SketchMorph class' category: 'Morphic-Circular'!
-SketchMorph class
-	instanceVariableNames: ''!
 
 !classDefinition: #ChevronMorph category: 'Morphic-Circular'!
 PluggableButtonMorph subclass: #ChevronMorph
@@ -56,9 +46,6 @@ CircularToolbarMorph subclass: #CircularSubToolbarMorph
 CircularSubToolbarMorph class
 	instanceVariableNames: ''!
 
-
-!SketchMorph commentStamp: '<historical>' prior: 0!
-I am an image morph with a modifiable extent.!
 
 !ChevronMorph commentStamp: '<historical>' prior: 0!
 I am a button for a circular morph. I look like a truncated section of a circle, I am nammed chevron as a shorter name.
@@ -118,30 +105,6 @@ icons do: [:icon | | button drop |
 	someIcons do: [: icn | (drop toolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
 	].
 tools openInWorld!
-
-!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:10:14'!
-drawOn: aCanvas
-	aCanvas image: (image magnifyTo: extent) at: self morphTopLeft! !
-
-!SketchMorph methodsFor: 'drawing' stamp: 'hlsf 5/29/2020 12:08:37'!
-minimumExtent
-	^ `1@1`! !
-
-!SketchMorph methodsFor: 'geometry' stamp: 'hlsf 5/29/2020 12:09:05'!
-morphExtent: newExtent
-	"assume it is always in our coordinates!!"
-	| oldBoundsInWorld |
-	self flag: #jmvVer2.
-	extent = newExtent ifFalse: [
-		"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
-		oldBoundsInWorld _ self morphBoundsInWorld.
-		(self privateExtent: newExtent) ifTrue: [
-			"Ask for the old bounds before updating them, but ask for repair only if extent was really changed."
-			oldBoundsInWorld ifNotNil: [
-				self invalidateDisplayRect: oldBoundsInWorld from: nil ].
-			self someSubmorphPositionOrExtentChanged.
-			owner ifNotNil: [ owner someSubmorphPositionOrExtentChanged ].
-			self redrawNeeded ]]! !
 
 !ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 12/31/2020 18:54:40'!
 drawMyShapeOn: canvas with: background
@@ -250,6 +213,11 @@ vertices
 isOrthoRectangularMorph
 	^ false! !
 
+!ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 1/3/2021 20:56:13'!
+morphContainsPoint: aLocalPoint
+"Pass thru for the pluggableButton"
+	^ true! !
+
 !ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 12/31/2020 17:05:53'!
 requiresVectorCanvas
 	^ true! !
@@ -265,11 +233,6 @@ isDropDownChevron
 !ChevronMorph methodsFor: 'testing' stamp: 'hlsf 6/15/2020 21:50:36'!
 isOnSubToolbar
 	^ owner isSubToolbar ! !
-
-!ChevronMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/3/2021 20:56:13'!
-morphContainsPoint: aLocalPoint
-"Pass thru for the pluggableButton"
-	^ true! !
 
 !ChevronMorph class methodsFor: 'instance creation' stamp: 'hlsf 1/3/2021 16:50:11'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
@@ -301,9 +264,9 @@ initialize
 		action: #dropDownClicked.
 	getStateSelector _ #isActivated! !
 
-!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:03:52'!
+!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/4/2021 11:46:00'!
 center
-	^ center ifNil: [	center _ Point rho: innerRadius theta: Float halfPi negated]! !
+	self shouldNotHappen ! !
 
 !DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:22:10'!
 vertices
@@ -388,11 +351,10 @@ aperture
 buttonSize
 	^ buttonSize! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:50:18'!
-buttonSize: anInteger
-	buttonSize _ anInteger * 1.4. "We need some gap to fit in the chevron area"
-	aperture _ nil.
-	self layoutChevrons.! !
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/4/2021 11:40:15'!
+buttonSize: integer
+	buttonSize _ integer * 1.4. "We need some gap to fit in the chevron area"
+ 	aperture _ nil! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:39:59'!
 chevronCount
@@ -401,12 +363,6 @@ chevronCount
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:36:42'!
 chevrons
 	^ self submorphsSatisfying: [:each | each isChevron]! !
-
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:33:38'!
-chevronsDo: aBlock
-	self submorphs 
-		select: [:each | each isChevron] 
-		thenDo: [:aChevron | aBlock value: aChevron]! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 20:35:17'!
 color
@@ -440,11 +396,6 @@ gap
 innerRadius
 	^ innerRadius ifNil: [innerRadius _ extent // 2 - buttonSize]! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 5/26/2020 16:52:56'!
-numberOfVisibleButtons
-"Number of visible buttons"
-	^  `Float twoPi` // (self aperture + self gap).! !
-
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 18:15:42'!
 privateButtonSize: anInteger
 	buttonSize _ anInteger! !
@@ -453,42 +404,24 @@ privateButtonSize: anInteger
 isSubToolbar
 	^ false! !
 
-!CircularToolbarMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 16:01:10'!
-layoutChevrons
-	| count |
-	count _ self numberOfVisibleButtons.
-	self chevronsDo: [: chevron |
-		count <= 0 
-			ifTrue: [
-				chevron setProperty: #visible toValue: false.
-				chevron dropDown ifNotNil: [:drop  | drop setProperty: #visible toValue: false]
-				]
-			ifFalse: [
-				chevron setProperty: #visible toValue: true.
-				chevron dropDown ifNotNil: [:drop  | 
-					"drop morphCenter: chevron dropDownCenter."
-					drop setProperty: #visible toValue: true]].
-		count _ count - 1].
-	self redrawNeeded ! !
-
 !CircularToolbarMorph methodsFor: 'drawing' stamp: 'hlsf 12/31/2020 18:48:34'!
 drawOn: aCanvas
 	aCanvas ellipseCenterX: 0 y: 0 rx: self innerRadius ry: self innerRadius 
 		borderWidth: 0 borderColor: color  fillColor: (color muchLighter alpha: 0.5)! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 1/3/2021 17:31:04'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 6/15/2020 22:24:14'!
+closeAllSubToolbars
+	self dropDownChevronsDo: [:dropDown | 
+		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
+
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 1/4/2021 11:33:14'!
 initialize
 	super initialize.
 	extent _ 300.! !
 
-!CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 6/7/2020 15:53:19'!
+!CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
 addedMorph: aMorph
-	self layoutChevrons ! !
-
-!CircularToolbarMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 6/15/2020 22:24:14'!
-closeAllSubToolbars
-	self dropDownChevronsDo: [:dropDown | 
-		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
+	self redrawNeeded ! !
 
 !CircularSubToolbarMorph methodsFor: 'testing' stamp: 'hlsf 6/12/2020 12:02:31'!
 isChevron
