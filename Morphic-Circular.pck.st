@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4508] on 4 January 2021 at 11:47:34 am'!
+'From Cuis 5.0 [latest update: #4520] on 7 January 2021 at 9:36:23 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 17!
+!provides: 'Morphic-Circular' 1 20!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -18,7 +18,7 @@ ChevronMorph class
 
 !classDefinition: #DropDownChevronMorph category: 'Morphic-Circular'!
 ChevronMorph subclass: #DropDownChevronMorph
-	instanceVariableNames: 'activated chevron toolbar'
+	instanceVariableNames: 'activated chevron toolbar height gap'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
@@ -28,7 +28,7 @@ DropDownChevronMorph class
 
 !classDefinition: #CircularToolbarMorph category: 'Morphic-Circular'!
 MovableMorph subclass: #CircularToolbarMorph
-	instanceVariableNames: 'buttonSize aperture innerRadius color extent'
+	instanceVariableNames: 'buttonSize aperture innerRadius color extent dropDownHeight dropDownGap'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
@@ -59,9 +59,11 @@ I  am inserted in a cicular toolbar of the given radius.
 !DropDownChevronMorph commentStamp: '<historical>' prior: 0!
 I am a small drop down chevron. The user clicks me to open a sub toolbar.
 - activated: true when I have been clicked, those a sub circular toolbar should show up
-- chevron: the chevron I am positionned close to!
+- chevron: the chevron I am positionned close to
+- height: drop down chevron height
+- gap: the gap between my chevron and me!
 
-!CircularToolbarMorph commentStamp: 'hlsf 12/31/2020 16:41:24' prior: 0!
+!CircularToolbarMorph commentStamp: 'hlsf 1/7/2021 21:35:48' prior: 0!
 - buttonSize: computed extent from the icon size (square)
 - aperture: the chevron angle as seen from the toolbar center
 - innerRadisu: interior size of the toolbar
@@ -73,7 +75,7 @@ I am circular toolbar. I can be a subToolbar too, then I render and behave a bit
 
 | tools |
 Feature require: 'VectorGraphics'.
-tools _ CircularToolbarMorph new buttonSize: 20; morphExtent: 150@150.
+tools := CircularToolbarMorph new buttonSize: 20; extent: 150.
 tools color: (Color orange alpha: 0.8);
 	addButton: Theme current newIcon;
 	addButton: Theme current openIcon;
@@ -84,27 +86,24 @@ tools color: (Color orange alpha: 0.8);
 	addButton: Theme current redoIcon ;
 	addButton: Theme current closeIcon ;
 	addButton: Theme current quitIcon.
-tools openInWorld.
+tools openInWorld.!
 
-Feature require: 'Animation'.
-tools openAnimated . 
-!
-
-!CircularSubToolbarMorph commentStamp: '<historical>' prior: 0!
+!CircularSubToolbarMorph commentStamp: 'hlsf 1/7/2021 21:35:33' prior: 0!
 I am circular sub-toolbar. I am trigerred from a drop down chevron attached to a parent circular toolbar (the main one)
 - dropDown : the drop down chevron I was opened from
 
 | tools icons someIcons |
-tools _ CircularToolbarMorph new buttonSize: 30; morphExtent: 300@300.
+Feature require: 'VectorGraphics'.
+tools := CircularToolbarMorph new buttonSize: 30; dropDownHeight: 10; dropDownGap: 3.
 tools color: (Color orange alpha: 0.8).
-someIcons _ {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon.}.
-icons _ {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon. Theme current pasteIcon. Theme current undoIcon. Theme current redoIcon. Theme current closeIcon. Theme current quitIcon}.
+someIcons := {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon.}.
+icons := {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon. Theme current pasteIcon. Theme current undoIcon. Theme current redoIcon. Theme current closeIcon. Theme current quitIcon}.
 icons do: [:icon | | button drop |
-	drop _ (button _ tools addButton: icon) addDropDown.
+	drop := (button := tools addButton: icon) addDropDown.
 	button setBalloonText: 'test'.
 	someIcons do: [: icn | (drop toolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
 	].
-tools openInWorld!
+tools openInWorld.!
 
 !ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 12/31/2020 18:54:40'!
 drawMyShapeOn: canvas with: background
@@ -117,12 +116,12 @@ drawMyShapeOn: canvas with: background
 			abs_ArcToX: (vertices floatAt: 1) y: (vertices floatAt: 2) 
 				radiusX: innerRadius radiusY: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true]! !
 
-!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 21:08:31'!
+!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/6/2021 11:39:11'!
 drawOn: canvas
 	self mouseIsOver 
 		ifTrue:  [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
 		ifFalse: [self drawMyShapeOn: canvas with: color].
-	icon ifNotNil: [canvas image: icon at: self center - (icon extent // 2)]! !
+	icon ifNotNil: [canvas imageUnrotated: icon at: self center - (icon extent // 2)]! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 12/31/2020 12:59:19'!
 dropDown
@@ -131,14 +130,6 @@ dropDown
 		owner submorphs 
 			detect: [:morph | morph isDropDownChevron and: [morph chevron == self]]
 			ifNone: [nil]]! !
-
-!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 16:09:36'!
-dropDownGap
-	^ 5! !
-
-!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 6/10/2020 12:48:40'!
-dropDownHeight
-	^ 15! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 17:17:01'!
 performAction
@@ -157,21 +148,25 @@ performAction
 		"Simulate a clic on the drop down so I close the subtoolbar"
 		owner dropDown closeSubToolbar ]! !
 
-!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/3/2021 16:11:06'!
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:16:36'!
+radius: number
+	radius _ number! !
+
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:44'!
 addDropDown
 "Decorate me with a drop down chevron"
 | newDropDown |
 	newDropDown _ DropDownChevronMorph
 		aperture: aperture 
 		shift: self rotation 
-		radius: radius + self dropDownGap + self dropDownHeight 
-		innerRadius: radius + self dropDownGap. 
+		radius: radius + owner dropDownGap + owner dropDownHeight 
+		innerRadius: radius + owner dropDownGap. 
 	newDropDown color: color; 		chevron: self.
 	self owner addMorphBack: newDropDown.
 	^ newDropDown 
 	! !
 
-!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/3/2021 16:10:13'!
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:53'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
 	vertices _ center _ nil.
 	aperture _ float1.
@@ -182,8 +177,8 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 		dropDown 
 			aperture: float1 
 			shift: float2 
-			radius: radius + self dropDownGap + self dropDownHeight 
-			innerRadius: radius + self dropDownGap]! !
+			radius: radius + owner dropDownGap + owner dropDownHeight 
+			innerRadius: radius + owner dropDownGap ]! !
 
 !ChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:00:29'!
 center
@@ -212,11 +207,6 @@ vertices
 !ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 5/25/2020 22:00:18'!
 isOrthoRectangularMorph
 	^ false! !
-
-!ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 1/3/2021 20:56:13'!
-morphContainsPoint: aLocalPoint
-"Pass thru for the pluggableButton"
-	^ true! !
 
 !ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 12/31/2020 17:05:53'!
 requiresVectorCanvas
@@ -256,7 +246,7 @@ drawOn: canvas
 		ifTrue: [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
 		ifFalse: [super drawOn: canvas]! !
 
-!DropDownChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/3/2021 13:10:00'!
+!DropDownChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:27:42'!
 initialize
 	super initialize.
 	activated _ false.
@@ -289,13 +279,13 @@ chevron
 chevron: aChevron
 	chevron _ aChevron ! !
 
-!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 20:35:48'!
+!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:32:08'!
 toolbar
 	^ toolbar ifNil: [
 		toolbar _ CircularSubToolbarMorph new
 			color: (Color random alpha: owner color alpha);
 			dropDown: self;
-			extent: (owner extent / 2 + owner buttonSize + (self dropDownGap  * 2) + self dropDownHeight) * 2;
+			extent: (owner extent / 2 + owner buttonSize + (owner dropDownGap * 2) + owner dropDownHeight) * 2;
 			rotation: self rotation;
 			privateButtonSize: owner buttonSize.
 		toolbar ]! !
@@ -351,9 +341,9 @@ aperture
 buttonSize
 	^ buttonSize! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/4/2021 11:40:15'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:03:40'!
 buttonSize: integer
-	buttonSize _ integer * 1.4. "We need some gap to fit in the chevron area"
+	buttonSize _ integer * 1.4. "We need some gap to fit in the icon on the chevron area"
  	aperture _ nil! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:39:59'!
@@ -379,7 +369,23 @@ dropDownChevronsDo: aBlock
 		select: [:each | each isDropDownChevron ] 
 		thenDo: [:aDropDownChevron | aBlock value: aDropDownChevron ]! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 17:38:26'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:30:46'!
+dropDownGap
+	^ dropDownGap! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:31:00'!
+dropDownGap: number
+	dropDownGap _ number ! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:30:36'!
+dropDownHeight
+	^ dropDownHeight! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:31:12'!
+dropDownHeight: number
+	dropDownHeight _ number ! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:08:39'!
 extent
 	^extent! !
 
@@ -414,10 +420,12 @@ closeAllSubToolbars
 	self dropDownChevronsDo: [:dropDown | 
 		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 1/4/2021 11:33:14'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:25'!
 initialize
 	super initialize.
-	extent _ 300.! !
+	extent _ 300.
+	dropDownHeight _ 15.
+	dropDownGap _ 5! !
 
 !CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
 addedMorph: aMorph
