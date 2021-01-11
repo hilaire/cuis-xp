@@ -1,11 +1,12 @@
-'From Cuis 5.0 [latest update: #4520] on 11 January 2021 at 2:08:52 pm'!
+'From Cuis 5.0 [latest update: #4520] on 11 January 2021 at 2:18:28 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 0!
+!provides: 'Morphic-DrawingTools' 1 2!
+!requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
 
 !classDefinition: #CompassMorph category: 'Morphic-DrawingTools'!
-Morph subclass: #CompassMorph
+MovableMorph subclass: #CompassMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -15,7 +16,7 @@ CompassMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #ProtractorMorph category: 'Morphic-DrawingTools'!
-Morph subclass: #ProtractorMorph
+MovableMorph subclass: #ProtractorMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -25,7 +26,7 @@ ProtractorMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #RulerMorph category: 'Morphic-DrawingTools'!
-Morph subclass: #RulerMorph
+MovableMorph subclass: #RulerMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -35,7 +36,7 @@ RulerMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #SetSquareMorph category: 'Morphic-DrawingTools'!
-Morph subclass: #SetSquareMorph
+MovableMorph subclass: #SetSquareMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
