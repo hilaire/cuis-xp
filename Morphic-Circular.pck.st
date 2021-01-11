@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4520] on 7 January 2021 at 9:36:23 pm'!
+'From Cuis 5.0 [latest update: #4520] on 10 January 2021 at 9:56:02 am'!
 'Description '!
-!provides: 'Morphic-Circular' 1 20!
+!provides: 'Morphic-Circular' 1 21!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -231,6 +231,10 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 		yourself
 ! !
 
+!ChevronMorph class methodsFor: 'as yet unclassified' stamp: 'hlsf 1/10/2021 09:55:42'!
+includeInNewMorphMenu
+	^ false! !
+
 !DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 12:53:31'!
 drawMyShapeOn: canvas with: background
 	canvas strokeWidth: 2 color: color muchDarker fillColor: background  do: [: engine |
@@ -430,6 +434,10 @@ initialize
 !CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
 addedMorph: aMorph
 	self redrawNeeded ! !
+
+!CircularToolbarMorph class methodsFor: 'as yet unclassified' stamp: 'hlsf 1/10/2021 09:55:33'!
+includeInNewMorphMenu
+	^ false! !
 
 !CircularSubToolbarMorph methodsFor: 'testing' stamp: 'hlsf 6/12/2020 12:02:31'!
 isChevron

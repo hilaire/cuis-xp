@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4520] on 11 January 2021 at 2:18:28 pm'!
+'From Cuis 5.0 [latest update: #4520] on 11 January 2021 at 7:58:10 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 2!
+!provides: 'Morphic-DrawingTools' 1 4!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -45,3 +45,17 @@ MovableMorph subclass: #SetSquareMorph
 SetSquareMorph class
 	instanceVariableNames: ''!
 
+
+!RulerMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/11/2021 19:57:01'!
+drawOn: canvas
+	| length font |
+	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
+	length _ 205.
+	canvas strokeWidth: 1 color: Color black fillColor: (Color yellow alpha: 0.8) do: [
+		canvas roundRectangleMinX: -5 maxX: length minY: 0 maxY: 40 rx: 2 ry: 2].
+	canvas strokeWidth: 1 color: Color black do: [
+		0 to: length - 5  by: 10 do: [:x |
+		canvas moveToX: x y: 0;
+			lineToX: x y: 5]].
+		0 to: length - 5  by: 10 do: [:x |
+			canvas drawString: (x//10) asString atCenterX: x@8 font: font color: Color black		].! !
