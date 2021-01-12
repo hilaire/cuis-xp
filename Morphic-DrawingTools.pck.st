@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4520] on 12 January 2021 at 3:05:37 pm'!
+'From Cuis 5.0 [latest update: #4520] on 12 January 2021 at 9:23:30 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 7!
+!provides: 'Morphic-DrawingTools' 1 9!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -46,16 +46,26 @@ SetSquareMorph class
 	instanceVariableNames: ''!
 
 
-!ProtractorMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/12/2021 15:04:44'!
+!ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 19:52:43'!
 drawOn: canvas
-| length |
+| length p1 p2 |
 	length _ 100.
 	canvas strokeWidth: 1 color: Color black fillColor: (Color yellow alpha: 0.6) do: [: engine |
 		engine abs_MoveToX: length negated y: 0.
 		engine abs_ArcToX: length y: 0 radiusX: length radiusY: length angleOfXAxis: 0 largeFlag: true sweepFlag: true.
 		engine abs_LineToX: length negated y: 		0		].
 	canvas strokeWidth: 1 color: Color black do: [
-		canvas moveToX: 0 y: -0.5; lineToX: 0 y: -8]! !
+		canvas moveToX: 0 y: -0.5; lineToX: 0 y: -8].
+	-180 to: 0 do: [:degree |
+		canvas strokeWidth: 0.5 color: Color black do: [:engine |
+			p1 _ Point r: length degrees: degree.
+			p2 _ Point r: length - 5 degrees: degree.
+			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]		.
+	-180 to: 0 by: 10 do: [:degree |
+		canvas strokeWidth: 1 color: Color black do: [:engine |
+			p1 _ Point r: length degrees: degree.
+			p2 _ Point r: length - 10 degrees: degree.
+			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
 
 !RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
 drawOn: canvas

@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4520] on 10 January 2021 at 9:56:02 am'!
+'From Cuis 5.0 [latest update: #4520] on 12 January 2021 at 7:46:47 pm'!
 'Description '!
 !provides: 'Morphic-Circular' 1 21!
 !requires: 'VectorGraphics' 1 183 nil!
