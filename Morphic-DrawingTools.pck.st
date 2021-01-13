@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4520] on 12 January 2021 at 9:23:30 pm'!
+'From Cuis 5.0 [latest update: #4520] on 13 January 2021 at 8:05:54 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 9!
+!provides: 'Morphic-DrawingTools' 1 10!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -46,26 +46,43 @@ SetSquareMorph class
 	instanceVariableNames: ''!
 
 
-!ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 19:52:43'!
+!ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/13/2021 19:57:57'!
 drawOn: canvas
-| length p1 p2 |
-	length _ 100.
-	canvas strokeWidth: 1 color: Color black fillColor: (Color yellow alpha: 0.6) do: [: engine |
-		engine abs_MoveToX: length negated y: 0.
-		engine abs_ArcToX: length y: 0 radiusX: length radiusY: length angleOfXAxis: 0 largeFlag: true sweepFlag: true.
-		engine abs_LineToX: length negated y: 		0		].
+|  p1 p2 |
+	canvas strokeWidth: 0.2 color: Color black fillColor: (Color yellow alpha: 0.6) do: [: engine |
+		engine abs_MoveToX: 100 negated y: 0.
+		engine abs_ArcToX: 100 y: 0 radiusX: 100 radiusY: 100 angleOfXAxis: 0 largeFlag: true sweepFlag: true.
+		engine abs_LineToX: -100 y: 		0		].
 	canvas strokeWidth: 1 color: Color black do: [
 		canvas moveToX: 0 y: -0.5; lineToX: 0 y: -8].
 	-180 to: 0 do: [:degree |
 		canvas strokeWidth: 0.5 color: Color black do: [:engine |
-			p1 _ Point r: length degrees: degree.
-			p2 _ Point r: length - 5 degrees: degree.
+			p1 _ Point r: 100 degrees: degree.
+			p2 _ Point r: 95 degrees: degree.
 			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]		.
-	-180 to: 0 by: 10 do: [:degree |
+	-170 to: -10 by: 10 do: [:degree |
 		canvas strokeWidth: 1 color: Color black do: [:engine |
-			p1 _ Point r: length degrees: degree.
-			p2 _ Point r: length - 10 degrees: degree.
+			p1 _ Point r: 100 degrees: degree.
+			p2 _ Point r: 90 degrees: degree.
+			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]].
+	-175 to: -5 by: 10 do: [:degree |
+		canvas strokeWidth: 0.6 color: Color black do: [:engine |
+			p1 _ Point r: 100 degrees: degree.
+			p2 _ Point r: 92 degrees: degree.
 			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
+
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/13/2021 19:36:44'!
+initialize
+| label p1 font |
+	super initialize .
+	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
+	10 to: 170 by: 10 do: [:angle | 
+		p1 _ Point r: 88 degrees: angle negated.
+		p1 _ p1 - (p1 normal * (font widthOfString: angle asString) / 2). 
+		label _ LabelMorph contents: angle asString font: font.
+		label rotation: (90 - angle) degreesToRadians.
+		self addMorph: label		.
+		label morphPosition: p1]! !
 
 !RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
 drawOn: canvas
