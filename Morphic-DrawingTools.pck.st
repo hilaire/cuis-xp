@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4520] on 13 January 2021 at 8:05:54 pm'!
+'From Cuis 5.0 [latest update: #4520] on 14 January 2021 at 4:44:39 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 10!
+!provides: 'Morphic-DrawingTools' 1 15!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -17,7 +17,7 @@ CompassMorph class
 
 !classDefinition: #ProtractorMorph category: 'Morphic-DrawingTools'!
 MovableMorph subclass: #ProtractorMorph
-	instanceVariableNames: ''
+	instanceVariableNames: 'previousHandPosition'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-DrawingTools'!
@@ -71,18 +71,51 @@ drawOn: canvas
 			p2 _ Point r: 92 degrees: degree.
 			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
 
-!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/13/2021 19:36:44'!
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/14/2021 14:56:24'!
+addLabel: string font: font centeredAt: position rotationDegrees: angle
+"Add a label top-centered at position and rotated of angle degrees"
+	| p label |
+	p _ position - (position normal * (font widthOfString: string asString) / 2). 
+	label _ LabelMorph contents: string font: font.
+	label rotation: (90 - angle) degreesToRadians.
+	self addMorph: label.
+	label morphPosition: p.
+	^ label! !
+
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/14/2021 15:34:05'!
 initialize
-| label p1 font |
+| font btn |
 	super initialize .
 	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
 	10 to: 170 by: 10 do: [:angle | 
-		p1 _ Point r: 88 degrees: angle negated.
-		p1 _ p1 - (p1 normal * (font widthOfString: angle asString) / 2). 
-		label _ LabelMorph contents: angle asString font: font.
-		label rotation: (90 - angle) degreesToRadians.
-		self addMorph: label		.
-		label morphPosition: p1]! !
+		self 
+			addLabel: angle asString 
+			font: font 
+			centeredAt: (Point r: 88 degrees: angle negated)
+			rotationDegrees: angle].
+	btn _ PluggableButtonMorph new label: 'O' font: font.
+	btn model: self ;
+		actWhen: #buttonStillDown;
+		action: #rotateProtractor.
+	self addMorph: btn.
+	btn morphPosition: 60 @ -20! !
+
+!ProtractorMorph methodsFor: 'action' stamp: 'hlsf 1/14/2021 16:43:36'!
+rotateProtractor
+	| event p1 v1 v2|
+	"any thing new to do?"
+	self activeHand hasChanged ifFalse: [^self ].
+	event _ self activeHand lastMouseEvent.
+	event isMove 
+		ifTrue: [
+			p1 _ location transform: 0@0.
+			v1 _ previousHandPosition - p1.
+			previousHandPosition _ event eventPosition.
+			v2 _ 	previousHandPosition - p1.
+			(v1 isZero or: [v2 isZero]) ifTrue: [^self].
+			self rotateBy:  ((v1 crossProduct: v2) / (v1 r * v2 r)) arcSin	] 
+		ifFalse: [
+			previousHandPosition _ event eventPosition].! !
 
 !RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
 drawOn: canvas
