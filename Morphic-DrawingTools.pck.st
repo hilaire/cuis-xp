@@ -1,9 +1,19 @@
-'From Cuis 5.0 [latest update: #4520] on 14 January 2021 at 9:22:22 pm'!
+'From Cuis 5.0 [latest update: #4523] on 15 January 2021 at 1:14:45 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 16!
+!provides: 'Morphic-DrawingTools' 1 19!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
+
+!classDefinition: #ToolButtonMorph category: 'Morphic-DrawingTools'!
+PluggableButtonMorph subclass: #ToolButtonMorph
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-DrawingTools'!
+!classDefinition: 'ToolButtonMorph class' category: 'Morphic-DrawingTools'!
+ToolButtonMorph class
+	instanceVariableNames: ''!
 
 !classDefinition: #CompassMorph category: 'Morphic-DrawingTools'!
 MovableMorph subclass: #CompassMorph
@@ -46,6 +56,13 @@ SetSquareMorph class
 	instanceVariableNames: ''!
 
 
+!ToolButtonMorph commentStamp: '<historical>' prior: 0!
+A button with icon or text to plug on a drawing tool!
+
+!ToolButtonMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:21:04'!
+drawOn: canvas
+	canvas imageUnrotated: icon at: (icon extent // 2) negated! !
+
 !ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/13/2021 19:57:57'!
 drawOn: canvas
 |  p1 p2 |
@@ -71,25 +88,26 @@ drawOn: canvas
 			p2 _ Point r: 92 degrees: degree.
 			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
 
-!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/14/2021 21:14:42'!
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/15/2021 10:27:24'!
 initialize
 | btn |
 	super initialize .
+	self setProperty: #'handlesMouseOver:'  toValue: true.
 	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
 	zeroAtRight _ true.
 	self updateGraduations.
-	btn _ PluggableButtonMorph new label: 'O' font: font.
+	btn _ ToolButtonMorph new icon: Theme current haloRotateIcon.
 	btn model: self; actWhen: #buttonStillDown; action: #rotateProtractor.
 	self addMorph: btn.
-	btn morphPosition: 65 @ -20.
-	btn _ PluggableButtonMorph new label: '[]' font: font.
+	btn morphPosition: 65 @ -10.
+	btn _ ToolButtonMorph new icon: Theme current haloScaleIcon.
 	btn model: self; actWhen: #buttonStillDown; action: #scaleProtractor.
 	self addMorph: btn.
-	btn morphPosition: 45 @ -20.
-	btn _ PluggableButtonMorph new label: '<>' font: font.
+	btn morphPosition: 45 @ -10.
+	btn _ ToolButtonMorph new icon: Theme current undoIcon.
 	btn model: self; action: #reverseGraduations.
 	self addMorph: btn.
-	btn morphPosition: -80 @ -20
+	btn morphPosition: -80 @ -10
 		! !
 
 !ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/14/2021 21:09:45'!
@@ -153,9 +171,21 @@ addLabel: string font: aFont centeredAt: position rotationDegrees: angle
 	label morphPosition: p.
 	^ label! !
 
+!ProtractorMorph methodsFor: 'accessing' stamp: 'hlsf 1/15/2021 10:10:30'!
+buttons
+	^ self submorphsSatisfying: [:each | each is: #PluggableButtonMorph ]! !
+
 !ProtractorMorph methodsFor: 'accessing' stamp: 'hlsf 1/14/2021 20:52:10'!
 graduations
 	^ self submorphsSatisfying: [:each | each class == LabelMorph]! !
+
+!ProtractorMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:10:59'!
+mouseEnter: event
+	self buttons do: [:each | each show]! !
+
+!ProtractorMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:11:10'!
+mouseLeave: event
+	self buttons do: [:each | each hide]! !
 
 !RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
 drawOn: canvas
