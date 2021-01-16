@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4523] on 15 January 2021 at 1:14:45 pm'!
+'From Cuis 5.0 [latest update: #4523] on 16 January 2021 at 11:42:40 am'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 19!
+!provides: 'Morphic-DrawingTools' 1 21!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -59,9 +59,10 @@ SetSquareMorph class
 !ToolButtonMorph commentStamp: '<historical>' prior: 0!
 A button with icon or text to plug on a drawing tool!
 
-!ToolButtonMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:21:04'!
+!ToolButtonMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/16/2021 09:40:04'!
 drawOn: canvas
-	canvas imageUnrotated: icon at: (icon extent // 2) negated! !
+	canvas ellipseCenterX: 0 y: 0 rx:  (icon extent // 2) x ry:  (icon extent // 2) y borderWidth: 1 borderColor: Color black fillColor: color.
+	canvas image: icon at: 0@0! !
 
 !ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/13/2021 19:57:57'!
 drawOn: canvas
@@ -88,27 +89,42 @@ drawOn: canvas
 			p2 _ Point r: 92 degrees: degree.
 			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
 
-!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/15/2021 10:27:24'!
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/16/2021 11:32:15'!
 initialize
-| btn |
 	super initialize .
 	self setProperty: #'handlesMouseOver:'  toValue: true.
 	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
 	zeroAtRight _ true.
 	self updateGraduations.
-	btn _ ToolButtonMorph new icon: Theme current haloRotateIcon.
+	self insertButtons ! !
+
+!ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/16/2021 11:41:00'!
+insertButtons
+| btn |
+	btn _ PluggableButtonMorph new label: 'O' font: font.
+	"icon: Theme current haloRotateIcon."
 	btn model: self; actWhen: #buttonStillDown; action: #rotateProtractor.
+	btn setProperty: #balloonText toValue: #helpRotate.
 	self addMorph: btn.
-	btn morphPosition: 65 @ -10.
-	btn _ ToolButtonMorph new icon: Theme current haloScaleIcon.
+	btn morphPosition: 65 @ -8.
+	btn _ PluggableButtonMorph new label: '[]' font: font.
+	"icon: Theme current haloScaleIcon."
 	btn model: self; actWhen: #buttonStillDown; action: #scaleProtractor.
+	btn setProperty: #balloonText toValue: #helpScale.
 	self addMorph: btn.
-	btn morphPosition: 45 @ -10.
-	btn _ ToolButtonMorph new icon: Theme current undoIcon.
+	btn morphPosition: 45 @ -8.
+	btn _ PluggableButtonMorph new label: '<>' font: font.
+	"icon: Theme current undoIcon".
 	btn model: self; action: #reverseGraduations.
+	btn setProperty: #balloonText toValue: #helpReverse.
 	self addMorph: btn.
-	btn morphPosition: -80 @ -10
-		! !
+	btn morphPosition: -80 @ -8.
+	btn _ PluggableButtonMorph new label: 'X' font: font.
+	"icon: Theme current undoIcon".
+	btn model: self; action: #delete.
+	btn setProperty: #balloonText toValue: #helpDelete.
+	self addMorph: btn.
+	btn morphPosition: -60 @ -8! !
 
 !ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/14/2021 21:09:45'!
 updateGraduations
@@ -179,13 +195,34 @@ buttons
 graduations
 	^ self submorphsSatisfying: [:each | each class == LabelMorph]! !
 
-!ProtractorMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:10:59'!
+!ProtractorMorph methodsFor: 'events' stamp: 'hlsf 1/15/2021 10:10:59'!
 mouseEnter: event
 	self buttons do: [:each | each show]! !
 
-!ProtractorMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/15/2021 10:11:10'!
+!ProtractorMorph methodsFor: 'events' stamp: 'hlsf 1/16/2021 09:43:50'!
 mouseLeave: event
-	self buttons do: [:each | each hide]! !
+	self buttons do: [:each | each hide]
+"	| btns | 
+	btns _ 	self buttons.
+	btns 
+		detect: [:btn | btn mouseIsOver] 
+		ifNone: [btns do: [:each | each hide]]"! !
+
+!ProtractorMorph methodsFor: 'halos and balloon help' stamp: 'hlsf 1/16/2021 11:41:19'!
+helpDelete
+	^ 'Close the protractor'! !
+
+!ProtractorMorph methodsFor: 'halos and balloon help' stamp: 'hlsf 1/16/2021 11:37:31'!
+helpReverse
+	^ 'Change the graduation direction'! !
+
+!ProtractorMorph methodsFor: 'halos and balloon help' stamp: 'hlsf 1/16/2021 11:36:42'!
+helpRotate
+	^ 'Rotate the protractor'! !
+
+!ProtractorMorph methodsFor: 'halos and balloon help' stamp: 'hlsf 1/16/2021 11:37:07'!
+helpScale
+	^ 'Change the scale of the protractor'! !
 
 !RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
 drawOn: canvas
