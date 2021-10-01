@@ -1,14 +1,14 @@
-'From Cuis 5.0 [latest update: #4895] on 30 September 2021 at 6:02:46 pm'!
+'From Cuis 5.0 [latest update: #4895] on 1 October 2021 at 11:30:51 am'!
 'Description '!
-!provides: 'Morphic-Circular' 1 25!
+!provides: 'Morphic-Circular' 1 30!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
 
 
 !classDefinition: #ChevronMorph category: 'Morphic-Circular'!
-PluggableButtonMorph subclass: #ChevronMorph
-	instanceVariableNames: 'aperture innerRadius radius center vertices'
+MovableMorph subclass: #ChevronMorph
+	instanceVariableNames: 'isPressed mouseIsOver color icon model aperture innerRadius radius center vertices actionSelector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
@@ -116,12 +116,20 @@ drawMyShapeOn: canvas with: background
 			arcTo: (vertices floatAt: 1) @ (vertices floatAt: 2) 
 				radius: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true]! !
 
-!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/6/2021 11:39:11'!
+!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 10/1/2021 10:40:30'!
 drawOn: canvas
-	self mouseIsOver 
+	mouseIsOver 
 		ifTrue:  [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
 		ifFalse: [self drawMyShapeOn: canvas with: color].
 	icon ifNotNil: [canvas imageUnrotated: icon at: self center - (icon extent // 2)]! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 11:21:03'!
+action: aSymbol
+	actionSelector _ aSymbol ! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:11:14'!
+color: aColor
+	color _ aColor! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 12/31/2020 12:59:19'!
 dropDown
@@ -131,22 +139,15 @@ dropDown
 			detect: [:morph | morph isDropDownChevron and: [morph chevron == self]]
 			ifNone: [nil]]! !
 
-!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 17:17:01'!
-performAction
-	super performAction.
-	"Am I a chevron on sub toolbar? 
-	If so I become the chevron my sub toolbar was attached too"
-	self isOnSubToolbar ifTrue: [ | target |
-		"Not a complete replacement, so do it by hand"
-		target _ owner dropDown chevron.
-		target icon: icon;
-			model: self model;
-			action: actionSelector;
-			secondaryActionSelector: secondaryActionSelector.
-		self valueOfProperty: #balloonText ifPresentDo: [:txt | target setBalloonText: txt].
-		owner owner redrawNeeded.
-		"Simulate a clic on the drop down so I close the subtoolbar"
-		owner dropDown closeSubToolbar ]! !
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:14:39'!
+icon: aForm
+	icon _ aForm ! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:18:37'!
+model: anObject
+	model ifNotNil: [model removeActionsWithReceiver: self].
+	anObject ifNotNil: [anObject addDependent: self].
+	model _ anObject! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:16:36'!
 radius: number
@@ -180,6 +181,28 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 			radius: radius + owner dropDownGap + owner dropDownHeight 
 			innerRadius: radius + owner dropDownGap ]! !
 
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/1/2021 11:29:37'!
+initialize
+	super initialize.
+	mouseIsOver _ isPressed _ false.
+	" Handle mouse down events "
+	self setProperty: #handlesMouseDown toValue: true.
+	self setProperty: #'mouseButton1Down:localPosition:'  toValue: [:event :localPosition |
+		isPressed _ true.
+		self redrawNeeded].
+	self setProperty: #mouseButton1Up:localPosition:  toValue: [:event :localPosition |
+		isPressed _ false.
+		(self coversPixel: event eventPosition) ifTrue: [self performAction].
+		self redrawNeeded ].
+	" Handle mouse over event "	
+	self setProperty: #handlesMouseOver: toValue: true.
+	self setProperty: #mouseEnter: toValue: [:event |
+		mouseIsOver _ true.
+		self redrawNeeded].
+	self setProperty: #mouseLeave:  toValue: [:event |
+		mouseIsOver _ false.
+		self redrawNeeded]! !
+
 !ChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:00:29'!
 center
 "Position to center an icon"
@@ -204,14 +227,6 @@ vertices
 	^ vertices
 	! !
 
-!ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 5/25/2020 22:00:18'!
-isOrthoRectangularMorph
-	^ false! !
-
-!ChevronMorph methodsFor: 'geometry testing' stamp: 'hlsf 12/31/2020 17:05:53'!
-requiresVectorCanvas
-	^ true! !
-
 !ChevronMorph methodsFor: 'testing' stamp: 'hlsf 6/7/2020 13:32:45'!
 isChevron
 	^ true! !
@@ -224,6 +239,23 @@ isDropDownChevron
 isOnSubToolbar
 	^ owner isSubToolbar ! !
 
+!ChevronMorph methodsFor: 'action' stamp: 'hlsf 10/1/2021 11:22:03'!
+performAction
+	"Am I a chevron on sub toolbar? 
+	If so I become the chevron my sub toolbar was attached too"
+	actionSelector ifNotNil: [
+		model perform: actionSelector].
+	self isOnSubToolbar ifTrue: [ | target |
+		"Not a complete replacement, so do it by hand"
+		target _ owner dropDown chevron.
+		target icon: icon;
+			model: model;
+			action: actionSelector.
+		self valueOfProperty: #balloonText ifPresentDo: [:txt | target setBalloonText: txt].
+		owner owner redrawNeeded.
+		"Simulate a clic on the drop down so I close the subtoolbar"
+		owner dropDown closeSubToolbar ].! !
+
 !ChevronMorph class methodsFor: 'instance creation' stamp: 'hlsf 1/3/2021 16:50:11'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
 	^ self new 
@@ -231,49 +263,9 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 		yourself
 ! !
 
-!ChevronMorph class methodsFor: 'as yet unclassified' stamp: 'hlsf 1/10/2021 09:55:42'!
+!ChevronMorph class methodsFor: 'new-morph participation' stamp: 'hlsf 1/10/2021 09:55:42'!
 includeInNewMorphMenu
 	^ false! !
-
-!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 9/29/2021 16:37:47'!
-drawMyShapeOn: canvas with: background
-	canvas strokeWidth: 2 color: color muchDarker fillColor: background  do: [: engine |
-		engine moveTo: (self vertices floatAt: 1) @ (vertices floatAt: 2);
-			arcTo: (vertices floatAt: 3) @ (vertices floatAt: 4) 
-				radius: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true;
-			lineTo: (vertices floatAt: 5) @ (vertices floatAt: 6);
-			lineTo: (vertices floatAt: 1) @ (vertices floatAt: 2)]	! !
-
-!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 12:56:08'!
-drawOn: canvas
-	activated 
-		ifTrue: [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
-		ifFalse: [super drawOn: canvas]! !
-
-!DropDownChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:27:42'!
-initialize
-	super initialize.
-	activated _ false.
-	self model: self;
-		action: #dropDownClicked.
-	getStateSelector _ #isActivated! !
-
-!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/4/2021 11:46:00'!
-center
-	self shouldNotHappen ! !
-
-!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:22:10'!
-vertices
-	| angle |
-	vertices ifNotNil: [^ vertices].
-	vertices _ Float32PointArray new: 3.
-	angle _ Float halfPi negated.
-	vertices at: 3 put: (Point rho: radius theta: angle).
-	angle _ angle + (aperture / 2).
-	vertices at: 2 put: (Point rho: innerRadius theta: angle).
-	angle _ angle - aperture.
-	vertices at: 1 put: (Point rho: innerRadius theta: angle).
-	^ vertices! !
 
 !DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:55:38'!
 chevron
@@ -294,6 +286,27 @@ toolbar
 			privateButtonSize: owner buttonSize.
 		toolbar ]! !
 
+!DropDownChevronMorph methodsFor: 'action' stamp: 'hlsf 10/1/2021 11:17:29'!
+performAction
+	activated
+		ifTrue: [ self closeSubToolbar ]
+		ifFalse: [ self openSubToolbar ].! !
+
+!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 9/29/2021 16:37:47'!
+drawMyShapeOn: canvas with: background
+	canvas strokeWidth: 2 color: color muchDarker fillColor: background  do: [: engine |
+		engine moveTo: (self vertices floatAt: 1) @ (vertices floatAt: 2);
+			arcTo: (vertices floatAt: 3) @ (vertices floatAt: 4) 
+				radius: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true;
+			lineTo: (vertices floatAt: 5) @ (vertices floatAt: 6);
+			lineTo: (vertices floatAt: 1) @ (vertices floatAt: 2)]	! !
+
+!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 12:56:08'!
+drawOn: canvas
+	activated 
+		ifTrue: [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
+		ifFalse: [super drawOn: canvas]! !
+
 !DropDownChevronMorph methodsFor: 'events' stamp: 'hlsf 1/3/2021 13:11:42'!
 closeSubToolbar
 	self toolbar delete.
@@ -310,6 +323,29 @@ openSubToolbar
 	owner closeAllSubToolbars.
 	owner addMorphBack: self toolbar.
 	activated _ true.! !
+
+!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/4/2021 11:46:00'!
+center
+	self shouldNotHappen ! !
+
+!DropDownChevronMorph methodsFor: 'geometry' stamp: 'hlsf 1/3/2021 13:22:10'!
+vertices
+	| angle |
+	vertices ifNotNil: [^ vertices].
+	vertices _ Float32PointArray new: 3.
+	angle _ Float halfPi negated.
+	vertices at: 3 put: (Point rho: radius theta: angle).
+	angle _ angle + (aperture / 2).
+	vertices at: 2 put: (Point rho: innerRadius theta: angle).
+	angle _ angle - aperture.
+	vertices at: 1 put: (Point rho: innerRadius theta: angle).
+	^ vertices! !
+
+!DropDownChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/1/2021 10:28:12'!
+initialize
+	super initialize.
+	activated _ false.
+	self model: self! !
 
 !DropDownChevronMorph methodsFor: 'testing' stamp: 'hlsf 6/12/2020 14:58:03'!
 isActivated
