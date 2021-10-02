@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4895] on 1 October 2021 at 11:30:51 am'!
+'From Cuis 5.0 [latest update: #4895] on 2 October 2021 at 12:05:42 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 30!
+!provides: 'Morphic-Circular' 1 32!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -275,11 +275,11 @@ chevron
 chevron: aChevron
 	chevron _ aChevron ! !
 
-!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 9/30/2021 17:58:16'!
+!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/2/2021 11:38:19'!
 toolbar
 	^ toolbar ifNil: [
 		toolbar _ CircularSubToolbarMorph new
-			color: (Color random alpha: owner color alpha);
+			color: owner color muchLighter;
 			dropDown: self;
 			extent: (owner extent / 2 + owner buttonSize + (owner dropDownGap * 2) + owner dropDownHeight) * 2;
 			rotation: self rotation;
@@ -359,8 +359,10 @@ isChevron
 isDropDownChevron
 	^ true! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/3/2021 16:14:27'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 10/2/2021 10:33:46'!
 addButton: icon
+"To add a button to a circular toolbar takes some work, let the toolbar compute the math internally,
+then return the button to adjust the model and action" 
 	| button |
 	button _ ChevronMorph 
 		aperture: self aperture 
@@ -393,6 +395,10 @@ chevronCount
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:36:42'!
 chevrons
 	^ self submorphsSatisfying: [:each | each isChevron]! !
+
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 10/2/2021 11:37:33'!
+color
+	^ color! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 9/30/2021 17:52:10'!
 color: aColor
@@ -456,12 +462,14 @@ closeAllSubToolbars
 	self dropDownChevronsDo: [:dropDown | 
 		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:25'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 11:54:12'!
 initialize
 	super initialize.
 	extent _ 300.
 	dropDownHeight _ 15.
-	dropDownGap _ 5! !
+	dropDownGap _ 5.
+	self buttonSize: 30.
+	color _ Color green darker alpha: 0.8.! !
 
 !CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
 addedMorph: aMorph
