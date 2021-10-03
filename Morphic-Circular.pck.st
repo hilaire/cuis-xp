@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4895] on 2 October 2021 at 12:05:42 pm'!
+'From Cuis 5.0 [latest update: #4895] on 3 October 2021 at 4:59:49 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 32!
+!provides: 'Morphic-Circular' 1 34!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -8,7 +8,7 @@ SystemOrganization addCategory: 'Morphic-Circular'!
 
 !classDefinition: #ChevronMorph category: 'Morphic-Circular'!
 MovableMorph subclass: #ChevronMorph
-	instanceVariableNames: 'isPressed mouseIsOver color icon model aperture innerRadius radius center vertices actionSelector'
+	instanceVariableNames: 'isPressed mouseIsOver color icon model aperture innerRadius radius center vertices actionSelector stateSelector argument'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Circular'!
@@ -50,6 +50,11 @@ CircularSubToolbarMorph class
 !ChevronMorph commentStamp: '<historical>' prior: 0!
 I am a button for a circular morph. I look like a truncated section of a circle, I am nammed chevron as a shorter name.
 I  am inserted in a cicular toolbar of the given radius.
+
+- model I request action or state to
+- actionSelector message to the model for action
+- stateSelector message to the model for state
+- argument optional argument for the model state
 
 - aperture is the angle (radian) between the two straight lines of the chevron
 - shift is the rotation angle (radian) of the chevron starting from the vertical centered position. With shift == 0, the chevron is centered at the top of the circular toolbar. The angle is clock-wise oriented. A shift value of pi/2 put the chevron at the right of the circular toolbar.
@@ -116,9 +121,9 @@ drawMyShapeOn: canvas with: background
 			arcTo: (vertices floatAt: 1) @ (vertices floatAt: 2) 
 				radius: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true]! !
 
-!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 10/1/2021 10:40:30'!
+!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 10/3/2021 16:18:36'!
 drawOn: canvas
-	mouseIsOver 
+	mouseIsOver | self getState 
 		ifTrue:  [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
 		ifFalse: [self drawMyShapeOn: canvas with: color].
 	icon ifNotNil: [canvas imageUnrotated: icon at: self center - (icon extent // 2)]! !
@@ -126,6 +131,10 @@ drawOn: canvas
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 11:21:03'!
 action: aSymbol
 	actionSelector _ aSymbol ! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:20:02'!
+argument: aSymbol
+	argument _ aSymbol ! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:11:14'!
 color: aColor
@@ -139,19 +148,30 @@ dropDown
 			detect: [:morph | morph isDropDownChevron and: [morph chevron == self]]
 			ifNone: [nil]]! !
 
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:52:43'!
+getState
+	^ stateSelector 
+		ifNil: [false]
+		ifNotNil: [
+			model perform: stateSelector withPossiblyWrongSizedArguments: {argument}]! !
+
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:14:39'!
 icon: aForm
 	icon _ aForm ! !
 
-!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:18:37'!
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:02:26'!
 model: anObject
-	model ifNotNil: [model removeActionsWithReceiver: self].
+	model ifNotNil: [model removeDependent: self].
 	anObject ifNotNil: [anObject addDependent: self].
 	model _ anObject! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:16:36'!
 radius: number
 	radius _ number! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:08:31'!
+state: aSymbol
+	stateSelector _ aSymbol ! !
 
 !ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:44'!
 addDropDown
@@ -181,7 +201,7 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 			radius: radius + owner dropDownGap + owner dropDownHeight 
 			innerRadius: radius + owner dropDownGap ]! !
 
-!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/1/2021 11:29:37'!
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/3/2021 15:47:58'!
 initialize
 	super initialize.
 	mouseIsOver _ isPressed _ false.
@@ -239,7 +259,7 @@ isDropDownChevron
 isOnSubToolbar
 	^ owner isSubToolbar ! !
 
-!ChevronMorph methodsFor: 'action' stamp: 'hlsf 10/1/2021 11:22:03'!
+!ChevronMorph methodsFor: 'action' stamp: 'hlsf 10/3/2021 16:22:01'!
 performAction
 	"Am I a chevron on sub toolbar? 
 	If so I become the chevron my sub toolbar was attached too"
@@ -250,7 +270,9 @@ performAction
 		target _ owner dropDown chevron.
 		target icon: icon;
 			model: model;
-			action: actionSelector.
+			action: actionSelector;
+			state: stateSelector;
+			argument: argument .
 		self valueOfProperty: #balloonText ifPresentDo: [:txt | target setBalloonText: txt].
 		owner owner redrawNeeded.
 		"Simulate a clic on the drop down so I close the subtoolbar"
@@ -462,14 +484,19 @@ closeAllSubToolbars
 	self dropDownChevronsDo: [:dropDown | 
 		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 11:54:12'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 12:15:16'!
 initialize
 	super initialize.
 	extent _ 300.
 	dropDownHeight _ 15.
 	dropDownGap _ 5.
 	self buttonSize: 30.
-	color _ Color green darker alpha: 0.8.! !
+	color _ Color green darker alpha: 0.8! !
+
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 12:16:46'!
+openInWorld: aWorld
+	super openInWorld: aWorld.
+	self startStepping: #comeToFront stepTime: 10.! !
 
 !CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
 addedMorph: aMorph
