@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4895] on 3 October 2021 at 4:59:52 pm'!
+'From Cuis 5.0 [latest update: #4895] on 10 October 2021 at 11:54:05 am'!
 'Description '!
 !provides: 'DrGeo' 1 203!
 !requires: 'Morphic-Circular' 1 30 nil!
@@ -30730,7 +30730,7 @@ arcButtonData
 arcCenterButtonData
 	^ {DrGArcCenterBuilder title. #arcCenter. #createArcCenter. DrGArcCenterBuilder description}! !
 
-!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/3/2021 16:55:00'!
+!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/10/2021 11:49:52'!
 axesButtonData
 	^ {#axesWording. #grid. #axesOnOff. 'Show or hide the ox and oy axes.' translated. #isAxesVisible}! !
 
@@ -30762,7 +30762,7 @@ exportBitmapButtonData
 freePointButtonData
 	^ {DrGFlyPointBuilder title. #freePoint. #createFreePoint. DrGFlyPointBuilder description}! !
 
-!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/3/2021 16:50:56'!
+!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/10/2021 11:51:48'!
 gridButtonData
 	^ {#gridWording. #grid. #gridOnOff. 'Show or hide grid.' translated. #isGridVisible}! !
 
@@ -30805,9 +30805,13 @@ macroDeleteButtonData
 macroExecuteButtonData
 	^ {DrGMacroPlayer title. #macroExecute. #executeMacro. DrGMacroPlayer description}! !
 
-!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/3/2021 16:51:21'!
+!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/10/2021 11:50:26'!
 magneticGridButtonData
 	^ {#magneticGridWording. #gridMagnet. #gridStuckOnOff. 'Snap to grid.' translated. #isGridded}! !
+
+!DrGUIControlsManager methodsFor: 'controls data'!
+menuButtonData 
+	^ {'Menu' translated. nil . nil . 'An unobtrusive menu with all Dr. Geo tools.' translated}! !
 
 !DrGUIControlsManager methodsFor: 'controls data'!
 middleButtonData
@@ -30817,7 +30821,7 @@ middleButtonData
 moveButtonData
 	^ {DrGSelectTool title. #move. #move. DrGSelectTool description}! !
 
-!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/3/2021 16:54:20'!
+!DrGUIControlsManager methodsFor: 'controls data' stamp: 'hlsf 10/10/2021 11:50:49'!
 multipleModeButtonData
 	^ {#createMultipleModeWording. #createMultiple. #createMultipleOnOff. 'Toggle between the build of several geometric objects and the build of one geometric object then move it.' translated. #isCreateMultipleMode}! !
 
@@ -31286,7 +31290,7 @@ isWheelY
 isWheelZ
 	^ self isCustomized not or: [usedControls at: #wheelZ]! !
 
-!DrGUIControlsManager methodsFor: 'toolbars' stamp: 'hlsf 10/3/2021 16:49:30'!
+!DrGUIControlsManager methodsFor: 'toolbars' stamp: 'hlsf 10/3/2021 16:20:07'!
 addButton: symbolOrArray to: aToolbar
 	"array first = menu label or button label
 	array second = button form = selection mode
@@ -31296,6 +31300,10 @@ addButton: symbolOrArray to: aToolbar
 	symbolOrArray isSymbol 
 		ifTrue: [	array _ self perform: (symbolOrArray, #ButtonData) asSymbol]
 		ifFalse: [ array _ symbolOrArray].
+
+	"getState: "
+	self flag: #drgeoTodo	.
+
 	^ (aToolbar addButton: (DrGIcons for: array second))
 		model: presenter;
 		action: array third;
@@ -31338,7 +31346,7 @@ curveTools
 macroTools
 	^ #(#macroBuild #macroExecute)! !
 
-!DrGUIControlsManager methodsFor: 'tools collections' stamp: 'hlsf 10/3/2021 16:55:22'!
+!DrGUIControlsManager methodsFor: 'tools collections' stamp: 'hlsf 10/10/2021 11:48:29'!
 miscTools
 	^ #(#new #open #keep
 	#undo #redo 

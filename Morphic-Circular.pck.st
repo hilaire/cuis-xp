@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4895] on 3 October 2021 at 4:59:49 pm'!
+'From Cuis 5.0 [latest update: #4895] on 10 October 2021 at 12:31:36 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 34!
+!provides: 'Morphic-Circular' 1 35!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -148,12 +148,11 @@ dropDown
 			detect: [:morph | morph isDropDownChevron and: [morph chevron == self]]
 			ifNone: [nil]]! !
 
-!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:52:43'!
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/10/2021 11:45:07'!
 getState
 	^ stateSelector 
 		ifNil: [false]
-		ifNotNil: [
-			model perform: stateSelector withPossiblyWrongSizedArguments: {argument}]! !
+		ifNotNil: [model perform: stateSelector withPossiblyWrongSizedArguments: {argument}]! !
 
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/1/2021 10:14:39'!
 icon: aForm
@@ -172,6 +171,12 @@ radius: number
 !ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/3/2021 16:08:31'!
 state: aSymbol
 	stateSelector _ aSymbol ! !
+
+!ChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/10/2021 12:03:31'!
+toolbar
+"Access to the top level toolbar. 
+Depend on where I am on a the toolbar or one if its circular toolbar"
+	^ self isOnSubToolbar 	ifTrue: [owner owner] ifFalse: [owner]! !
 
 !ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 1/7/2021 21:31:44'!
 addDropDown
@@ -201,10 +206,14 @@ aperture: float1 shift: float2 radius: integer1 innerRadius: integer2
 			radius: radius + owner dropDownGap + owner dropDownHeight 
 			innerRadius: radius + owner dropDownGap ]! !
 
-!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/3/2021 15:47:58'!
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/10/2021 11:57:31'!
 initialize
 	super initialize.
 	mouseIsOver _ isPressed _ false.
+	self initializeMouseEvents ! !
+
+!ChevronMorph methodsFor: 'initialization' stamp: 'hlsf 10/10/2021 11:57:04'!
+initializeMouseEvents
 	" Handle mouse down events "
 	self setProperty: #handlesMouseDown toValue: true.
 	self setProperty: #'mouseButton1Down:localPosition:'  toValue: [:event :localPosition |
@@ -259,10 +268,10 @@ isDropDownChevron
 isOnSubToolbar
 	^ owner isSubToolbar ! !
 
-!ChevronMorph methodsFor: 'action' stamp: 'hlsf 10/3/2021 16:22:01'!
+!ChevronMorph methodsFor: 'action' stamp: 'hlsf 10/10/2021 12:05:32'!
 performAction
-	"Am I a chevron on sub toolbar? 
-	If so I become the chevron my sub toolbar was attached too"
+"Am I a chevron on sub toolbar? 
+If so I become the chevron my sub toolbar was attached too"
 	actionSelector ifNotNil: [
 		model perform: actionSelector].
 	self isOnSubToolbar ifTrue: [ | target |
@@ -273,10 +282,9 @@ performAction
 			action: actionSelector;
 			state: stateSelector;
 			argument: argument .
-		self valueOfProperty: #balloonText ifPresentDo: [:txt | target setBalloonText: txt].
-		owner owner redrawNeeded.
-		"Simulate a clic on the drop down so I close the subtoolbar"
-		owner dropDown closeSubToolbar ].! !
+		self valueOfProperty: #balloonText ifPresentDo: [:txt | target setBalloonText: txt]].
+	self toolbar closeAllSubToolbars;
+		redrawNeeded.! !
 
 !ChevronMorph class methodsFor: 'instance creation' stamp: 'hlsf 1/3/2021 16:50:11'!
 aperture: float1 shift: float2 radius: integer1 innerRadius: integer2 
@@ -414,9 +422,10 @@ buttonSize: integer
 chevronCount
 	^ self chevrons size! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:36:42'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 10/10/2021 12:26:37'!
 chevrons
-	^ self submorphsSatisfying: [:each | each isChevron]! !
+	^ self submorphsSatisfying: [:each | 
+		[each isChevron] on: MessageNotUnderstood do:[false]]! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 10/2/2021 11:37:33'!
 color
@@ -427,10 +436,10 @@ color: aColor
 	color _ aColor.
 	self submorphsDo: [:each | each color: aColor]! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/8/2020 19:27:09'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 10/10/2021 12:27:24'!
 dropDownChevronsDo: aBlock
 	self submorphs 
-		select: [:each | each isDropDownChevron ] 
+		select: [:each | [each isDropDownChevron] on: MessageNotUnderstood do: [false]] 
 		thenDo: [:aDropDownChevron | aBlock value: aDropDownChevron ]! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:30:46'!
@@ -484,21 +493,28 @@ closeAllSubToolbars
 	self dropDownChevronsDo: [:dropDown | 
 		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 12:15:16'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/10/2021 12:30:17'!
 initialize
 	super initialize.
 	extent _ 300.
 	dropDownHeight _ 15.
 	dropDownGap _ 5.
 	self buttonSize: 30.
-	color _ Color green darker alpha: 0.8! !
+	color _ Color green darker alpha: 0.8.
+	self isSubToolbar ifFalse: [ 
+		| closeButton |
+		closeButton _ PluggableButtonMorph model: self action: #delete.
+		closeButton icon: Theme current closeIcon..		
+		self addMorph: closeButton.
+		closeButton morphPosition: closeButton morphExtent // -2] 
+	! !
 
 !CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/2/2021 12:16:46'!
 openInWorld: aWorld
 	super openInWorld: aWorld.
 	self startStepping: #comeToFront stepTime: 10.! !
 
-!CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 1/4/2021 11:39:31'!
+!CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 10/10/2021 12:06:25'!
 addedMorph: aMorph
 	self redrawNeeded ! !
 
