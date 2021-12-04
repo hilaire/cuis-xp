@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4895] on 10 October 2021 at 12:31:36 pm'!
+'From Cuis 5.0 [latest update: #4997] on 4 December 2021 at 9:26:40 pm'!
 'Description '!
-!provides: 'Morphic-Circular' 1 35!
+!provides: 'Morphic-Circular' 1 36!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
@@ -121,10 +121,10 @@ drawMyShapeOn: canvas with: background
 			arcTo: (vertices floatAt: 1) @ (vertices floatAt: 2) 
 				radius: innerRadius angleOfXAxis: aperture largeFlag: false sweepFlag: true]! !
 
-!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 10/3/2021 16:18:36'!
+!ChevronMorph methodsFor: 'drawing' stamp: 'hlsf 12/4/2021 21:04:21'!
 drawOn: canvas
 	mouseIsOver | self getState 
-		ifTrue:  [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
+		ifTrue:  [self drawMyShapeOn: canvas with: (Color gray alpha: color alpha)]
 		ifFalse: [self drawMyShapeOn: canvas with: color].
 	icon ifNotNil: [canvas imageUnrotated: icon at: self center - (icon extent // 2)]! !
 
@@ -305,11 +305,11 @@ chevron
 chevron: aChevron
 	chevron _ aChevron ! !
 
-!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 10/2/2021 11:38:19'!
+!DropDownChevronMorph methodsFor: 'accessing' stamp: 'hlsf 12/4/2021 21:14:36'!
 toolbar
 	^ toolbar ifNil: [
 		toolbar _ CircularSubToolbarMorph new
-			color: owner color muchLighter;
+			color: owner color lighter;
 			dropDown: self;
 			extent: (owner extent / 2 + owner buttonSize + (owner dropDownGap * 2) + owner dropDownHeight) * 2;
 			rotation: self rotation;
@@ -331,10 +331,10 @@ drawMyShapeOn: canvas with: background
 			lineTo: (vertices floatAt: 5) @ (vertices floatAt: 6);
 			lineTo: (vertices floatAt: 1) @ (vertices floatAt: 2)]	! !
 
-!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 1/3/2021 12:56:08'!
+!DropDownChevronMorph methodsFor: 'drawing' stamp: 'hlsf 12/4/2021 21:07:17'!
 drawOn: canvas
 	activated 
-		ifTrue: [self drawMyShapeOn: canvas with: (Color white alpha: color alpha)]
+		ifTrue: [self drawMyShapeOn: canvas with: (Color gray alpha: color alpha)]
 		ifFalse: [super drawOn: canvas]! !
 
 !DropDownChevronMorph methodsFor: 'events' stamp: 'hlsf 1/3/2021 13:11:42'!
@@ -413,9 +413,9 @@ aperture
 buttonSize
 	^ buttonSize! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 1/7/2021 21:03:40'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 12/4/2021 21:22:01'!
 buttonSize: integer
-	buttonSize _ integer * 1.4. "We need some gap to fit in the icon on the chevron area"
+	buttonSize _ integer * 1.1. "We need some gap to fit in the icon on the chevron area"
  	aperture _ nil! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:39:59'!
@@ -483,7 +483,7 @@ privateButtonSize: anInteger
 isSubToolbar
 	^ false! !
 
-!CircularToolbarMorph methodsFor: 'drawing' stamp: 'hlsf 12/31/2020 18:48:34'!
+!CircularToolbarMorph methodsFor: 'drawing' stamp: 'hlsf 12/4/2021 21:03:53'!
 drawOn: aCanvas
 	aCanvas ellipseCenterX: 0 y: 0 rx: self innerRadius ry: self innerRadius 
 		borderWidth: 0 borderColor: color  fillColor: (color muchLighter alpha: 0.5)! !
@@ -493,10 +493,10 @@ closeAllSubToolbars
 	self dropDownChevronsDo: [:dropDown | 
 		dropDown isActivated ifTrue: [dropDown closeSubToolbar ]]! !
 
-!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 10/10/2021 12:30:17'!
+!CircularToolbarMorph methodsFor: 'initialization' stamp: 'hlsf 12/4/2021 21:26:10'!
 initialize
 	super initialize.
-	extent _ 300.
+	extent _ 350.
 	dropDownHeight _ 15.
 	dropDownGap _ 5.
 	self buttonSize: 30.
@@ -517,25 +517,6 @@ openInWorld: aWorld
 !CircularToolbarMorph methodsFor: 'change reporting' stamp: 'hlsf 10/10/2021 12:06:25'!
 addedMorph: aMorph
 	self redrawNeeded ! !
-
-!CircularToolbarMorph class methodsFor: 'as yet unclassified' stamp: 'hlsf 9/30/2021 17:51:35'!
-DoIt
-
-
-| tools |
-Feature require: 'VectorGraphics'.
-tools := CircularToolbarMorph new buttonSize: 20; extent: 150.
-tools color: (Color orange alpha: 0.8);
-	addButton: Theme current newIcon;
-	addButton: Theme current openIcon;
-	addButton: Theme current saveIcon;
-	addButton: Theme current copyIcon ;
-	addButton: Theme current pasteIcon ;
-	addButton: Theme current undoIcon;
-	addButton: Theme current redoIcon ;
-	addButton: Theme current closeIcon ;
-	addButton: Theme current quitIcon.
-tools openInWorld.! !
 
 !CircularToolbarMorph class methodsFor: 'as yet unclassified' stamp: 'hlsf 1/10/2021 09:55:33'!
 includeInNewMorphMenu
