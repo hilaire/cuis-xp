@@ -1,13 +1,13 @@
-'From Cuis 5.0 [latest update: #4997] on 9 December 2021 at 4:06:46 pm'!
+'From Cuis 6.0 [latest update: #5031] on 3 January 2022 at 8:44:57 am'!
 'Description '!
-!provides: 'Morphic-Circular' 1 37!
+!provides: 'Morphic-Circular' 1 39!
 !requires: 'VectorGraphics' 1 183 nil!
 !requires: 'Collections-CompactArrays' 1 13 nil!
 SystemOrganization addCategory: 'Morphic-Circular'!
 
 
 !classDefinition: #ChevronMorph category: 'Morphic-Circular'!
-MovableMorph subclass: #ChevronMorph
+PlacedMorph subclass: #ChevronMorph
 	instanceVariableNames: 'isPressed mouseIsOver icon model aperture innerRadius radius center vertices actionSelector stateSelector argument toolbar'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -27,7 +27,7 @@ DropDownChevronMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #CircularToolbarMorph category: 'Morphic-Circular'!
-MovableMorph subclass: #CircularToolbarMorph
+PlacedMorph subclass: #CircularToolbarMorph
 	instanceVariableNames: 'buttonSize aperture innerRadius dropDownHeight dropDownGap extent color selectedColor'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -93,7 +93,7 @@ tools color: (Color orange alpha: 0.8);
 	addButton: Theme current quitIcon.
 tools openInWorld.!
 
-!CircularSubToolbarMorph commentStamp: 'hlsf 1/7/2021 21:35:33' prior: 0!
+!CircularSubToolbarMorph commentStamp: '<historical>' prior: 0!
 I am circular sub-toolbar. I am trigerred from a drop down chevron attached to a parent circular toolbar (the main one)
 - dropDown : the drop down chevron I was opened from
 
@@ -104,9 +104,10 @@ tools color: (Color orange alpha: 0.8).
 someIcons := {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon.}.
 icons := {Theme current newIcon. Theme current openIcon .Theme current saveIcon. Theme current copyIcon. Theme current pasteIcon. Theme current undoIcon. Theme current redoIcon. Theme current closeIcon. Theme current quitIcon}.
 icons do: [:icon | | button drop |
-	drop := (button := tools addButton: icon) addDropDown.
+	button := tools addButton: icon.
 	button setBalloonText: 'test'.
-	someIcons do: [: icn | (drop toolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
+	drop := button addDropDown.
+	someIcons do: [: icn | (drop subtoolbar addButton: icn) setBalloonText: 'I''am a button in a circular sub toolbar']
 	].
 tools openInWorld.!
 
@@ -414,9 +415,9 @@ aperture
 buttonSize
 	^ buttonSize! !
 
-!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 12/4/2021 21:22:01'!
+!CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 12/14/2021 21:11:33'!
 buttonSize: integer
-	buttonSize _ integer * 1.1. "We need some gap to fit in the icon on the chevron area"
+	buttonSize _ integer * 1.2. "We need some gap to fit in the icon on the chevron area"
  	aperture _ nil! !
 
 !CircularToolbarMorph methodsFor: 'accessing' stamp: 'hlsf 6/7/2020 13:39:59'!
