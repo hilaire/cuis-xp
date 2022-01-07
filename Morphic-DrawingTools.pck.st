@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4523] on 16 January 2021 at 11:42:40 am'!
+'From Cuis 6.0 [latest update: #5041] on 7 January 2022 at 3:00:22 pm'!
 'Description '!
-!provides: 'Morphic-DrawingTools' 1 21!
+!provides: 'Morphic-DrawingTools' 1 23!
 !requires: 'VectorGraphics' 1 185 nil!
 SystemOrganization addCategory: 'Morphic-DrawingTools'!
 
@@ -16,7 +16,7 @@ ToolButtonMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #CompassMorph category: 'Morphic-DrawingTools'!
-MovableMorph subclass: #CompassMorph
+PlacedMorph subclass: #CompassMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -26,7 +26,7 @@ CompassMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #ProtractorMorph category: 'Morphic-DrawingTools'!
-MovableMorph subclass: #ProtractorMorph
+PlacedMorph subclass: #ProtractorMorph
 	instanceVariableNames: 'previousHandPosition font zeroAtRight'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -36,7 +36,7 @@ ProtractorMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #RulerMorph category: 'Morphic-DrawingTools'!
-MovableMorph subclass: #RulerMorph
+PlacedMorph subclass: #RulerMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -46,7 +46,7 @@ RulerMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #SetSquareMorph category: 'Morphic-DrawingTools'!
-MovableMorph subclass: #SetSquareMorph
+PlacedMorph subclass: #SetSquareMorph
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -59,35 +59,35 @@ SetSquareMorph class
 !ToolButtonMorph commentStamp: '<historical>' prior: 0!
 A button with icon or text to plug on a drawing tool!
 
-!ToolButtonMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/16/2021 09:40:04'!
+!ToolButtonMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/7/2022 14:42:31'!
 drawOn: canvas
-	canvas ellipseCenterX: 0 y: 0 rx:  (icon extent // 2) x ry:  (icon extent // 2) y borderWidth: 1 borderColor: Color black fillColor: color.
+	canvas ellipseCenter: 0 radius:  icon extent // 2 borderWidth: 1 borderColor: Color black fillColor: color.
 	canvas image: icon at: 0@0! !
 
-!ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/13/2021 19:57:57'!
+!ProtractorMorph methodsFor: 'drawing' stamp: 'hlsf 1/7/2022 14:48:52'!
 drawOn: canvas
 |  p1 p2 |
 	canvas strokeWidth: 0.2 color: Color black fillColor: (Color yellow alpha: 0.6) do: [: engine |
-		engine abs_MoveToX: 100 negated y: 0.
-		engine abs_ArcToX: 100 y: 0 radiusX: 100 radiusY: 100 angleOfXAxis: 0 largeFlag: true sweepFlag: true.
-		engine abs_LineToX: -100 y: 		0		].
+		engine moveTo: 100 negated @ 0.
+		engine arcTo: 100 @ 0 radius: 100 @ 100 angleOfXAxis: 0 largeFlag: true sweepFlag: true.
+		engine lineTo: -100 @ 		0		].
 	canvas strokeWidth: 1 color: Color black do: [
-		canvas moveToX: 0 y: -0.5; lineToX: 0 y: -8].
+		canvas moveTo: 0 @ -0.5; lineTo: 0 @ -8].
 	-180 to: 0 do: [:degree |
 		canvas strokeWidth: 0.5 color: Color black do: [:engine |
 			p1 _ Point r: 100 degrees: degree.
 			p2 _ Point r: 95 degrees: degree.
-			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]		.
+			engine moveTo: p1 ; lineTo: p2]]		.
 	-170 to: -10 by: 10 do: [:degree |
 		canvas strokeWidth: 1 color: Color black do: [:engine |
 			p1 _ Point r: 100 degrees: degree.
 			p2 _ Point r: 90 degrees: degree.
-			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]].
+			engine moveTo: p1; lineTo: p2 ]].
 	-175 to: -5 by: 10 do: [:degree |
 		canvas strokeWidth: 0.6 color: Color black do: [:engine |
 			p1 _ Point r: 100 degrees: degree.
 			p2 _ Point r: 92 degrees: degree.
-			engine abs_MoveToX: p1 x y: p1 y; abs_LineToX: p2 x y: p2 y]]! !
+			engine moveTo: p1; lineTo: p2 ]]! !
 
 !ProtractorMorph methodsFor: 'initialization' stamp: 'hlsf 1/16/2021 11:32:15'!
 initialize
@@ -142,11 +142,10 @@ reverseGraduations
 	zeroAtRight _ zeroAtRight not.
 	self updateGraduations ! !
 
-!ProtractorMorph methodsFor: 'action' stamp: 'hlsf 1/14/2021 16:43:36'!
+!ProtractorMorph methodsFor: 'action' stamp: 'hlsf 1/7/2022 14:56:19'!
 rotateProtractor
 	| event p1 v1 v2|
 	"any thing new to do?"
-	self activeHand hasChanged ifFalse: [^self ].
 	event _ self activeHand lastMouseEvent.
 	event isMove 
 		ifTrue: [
@@ -159,11 +158,10 @@ rotateProtractor
 		ifFalse: [
 			previousHandPosition _ event eventPosition].! !
 
-!ProtractorMorph methodsFor: 'action' stamp: 'hlsf 1/14/2021 21:19:36'!
+!ProtractorMorph methodsFor: 'action' stamp: 'hlsf 1/7/2022 14:56:00'!
 scaleProtractor
 	| event p1 v1 v2|
 	"any thing new to do?"
-	self activeHand hasChanged ifFalse: [^self ].
 	event _ self activeHand lastMouseEvent.
 	event isMove 
 		ifTrue: [
@@ -224,7 +222,7 @@ helpRotate
 helpScale
 	^ 'Change the scale of the protractor'! !
 
-!RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/12/2021 14:35:14'!
+!RulerMorph methodsFor: 'drawing' stamp: 'hlsf 1/7/2022 14:57:47'!
 drawOn: canvas
 	| length font |
 	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: 4.
@@ -236,19 +234,19 @@ drawOn: canvas
 	
 	canvas strokeWidth: 1 color: Color black do: [
 		0 to: length - 5  by: 10 do: [:x |
-		canvas moveToX: x y: 0.5;
-			lineToX: x y: 5]].
+		canvas moveTo: x @ 0.5;
+			lineTo: x @ 5]].
 	0 to: length - 5  by: 10 do: [:x |
 		canvas drawString: (x//10) asString atCenterX: x@8 font: font color: Color black		].! !
 
-!SetSquareMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/12/2021 14:53:50'!
+!SetSquareMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 1/7/2022 14:59:16'!
 drawOn: canvas
 	| length  |
 	length _ 205.
 	canvas strokeWidth: 1 color: Color black fillColor: (Color yellow alpha: 0.8) do: [
-		canvas moveToX: 0 y: 0 negated; lineToX: length / 2.0 y: 0; lineToX: 0 y: length negated].
+		canvas moveTo: 0 @ 0 ; lineTo: length / 2.0 @ 0; lineTo: 0 @ length negated].
 	canvas strokeWidth: 1 color: Color black fillColor: (Color white alpha: 1 ) do: [
-		canvas moveToX: 20 y: 20 negated; lineToX: length / 2.0 -30 y: -20; lineToX: 20 y: length negated + 80]
+		canvas moveTo: 20 @ 20 negated; lineTo: length / 2.0 -30 @ -20; lineTo: 20 @ (length negated + 80)]
 	
 	
 	! !

@@ -1,11 +1,11 @@
-'From Cuis 5.0 [latest update: #4413] on 22 October 2020 at 12:22:29 pm'!
+'From Cuis 6.0 [latest update: #5041] on 7 January 2022 at 2:31:31 pm'!
 'Description A morph simulating a dice with an arbitrary number of faces, bellow 9.'!
-!provides: 'Dice' 1 1!
+!provides: 'Dice' 1 2!
 SystemOrganization addCategory: 'Dice'!
 
 
 !classDefinition: #DiceMorph category: 'Dice'!
-WidgetMorph subclass: #DiceMorph
+BoxedMorph subclass: #DiceMorph
 	instanceVariableNames: 'faces value isRolling'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -23,25 +23,19 @@ dice := DiceMorph new openInWorld.
 dice startRolling.
 !
 
-!DiceMorph methodsFor: 'drawing' stamp: 'HilaireFernandes 10/28/2017 16:16:36'!
+!DiceMorph methodsFor: 'drawing' stamp: 'hlsf 1/7/2022 14:21:20'!
 drawDotOn: canvas at: aPoint
 	| radius center |
 	center _ aPoint * extent.
 	radius _ extent // 12.
 	canvas 
-		ellipseCenterX: center x y: center y 
-		rx: radius x ry: radius y
+		ellipseCenter: center 
+		radius: radius
 		borderWidth: 0 borderColor: Color black fillColor: Color black! !
 
-!DiceMorph methodsFor: 'drawing' stamp: 'HilaireFernandes 10/28/2017 16:43:33'!
+!DiceMorph methodsFor: 'drawing' stamp: 'hlsf 1/7/2022 14:30:42'!
 drawOn: canvas
-	canvas 
-		roundRect: self morphLocalBounds 
-		color: color 
-		radius: 10
-		gradientTop:  1.0
-		gradientBottom: 0.5 
-		gradientHeight: (extent y // 2 min: 200).
+	canvas roundRect: self morphLocalBounds color: color radius: 10.
 	(self perform: ('face', value asString) asSymbol) do: [:eachPoint |
 		self drawDotOn: canvas at: eachPoint]! !
 
