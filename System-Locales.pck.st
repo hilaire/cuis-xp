@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5050] on 20 February 2022 at 10:45:17 am'!
+'From Cuis 6.0 [latest update: #5090] on 4 March 2022 at 11:14:01 am'!
 'Description '!
-!provides: 'System-Locales' 1 1!
+!provides: 'System-Locales' 1 3!
 SystemOrganization addCategory: 'System-Locales'!
 
 
@@ -24,53 +24,26 @@ Object subclass: #Locale
 Locale class
 	instanceVariableNames: ''!
 
-!classDefinition: #LocaleID category: 'System-Locales'!
-Object subclass: #LocaleID
-	instanceVariableNames: 'isoLanguage isoCountry'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'System-Locales'!
-!classDefinition: 'LocaleID class' category: 'System-Locales'!
-LocaleID class
-	instanceVariableNames: ''!
-
-!classDefinition: #NaturalLanguageTranslator category: 'System-Locales'!
-Object subclass: #NaturalLanguageTranslator
-	instanceVariableNames: 'id'
-	classVariableNames: 'Translators'
-	poolDictionaries: ''
-	category: 'System-Locales'!
-!classDefinition: 'NaturalLanguageTranslator class' category: 'System-Locales'!
-NaturalLanguageTranslator class
-	instanceVariableNames: ''!
-
 
 !ISOLanguageDefinition commentStamp: '' prior: 0!
 The language definitions from International Organization for Standardization.
 
 You can obtain the list of the all the ISOCountries and languages.!
 
-!Locale commentStamp: '' prior: 0!
-Main comment stating the purpose of this class and relevant relationship to other classes.
+!Locale commentStamp: '<historical>' prior: 0!
+Locale current
+Locale current isoLanguage
+Locale current isoCountry
 
 
-
-	http://www.w3.org/WAI/ER/IG/ert/iso639.htm
-	http://www.oasis-open.org/cover/iso639a.html
-	See also
-	http://oss.software.ibm.com/cvs/icu/~checkout~/icuhtml/design/language_code_issues.html
-	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.10
+References:
+http://www.w3.org/WAI/ER/IG/ert/iso639.htm
+http://www.oasis-open.org/cover/iso639a.html
+http://oss.software.ibm.com/cvs/icu/~checkout~/icuhtml/design/language_code_issues.html
+http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.10
 	
 ISO 3166
-http://mitglied.lycos.de/buran/knowhow/codes/locales/
-!
-
-!LocaleID commentStamp: '' prior: 0!
-The ID for localization!
-
-!NaturalLanguageTranslator commentStamp: '' prior: 0!
-abstract class of natural language translator.
-Class side manages and holds loaded instances of concrete classes.!
+http://mitglied.lycos.de/buran/knowhow/codes/locales/!
 
 !Locale class methodsFor: 'system startup' stamp: 'hlsf 2/20/2022 10:09:26'!
 startUp: resuming
@@ -86,32 +59,6 @@ startUp: resuming
 printOn: aStream 
 	super printOn: aStream.
 	aStream nextPutAll:  '(' ; print: id ; nextPutAll:  ')'! !
-
-!LocaleID methodsFor: 'printing'!
-printOn: stream
-	"<language>-<country>"
-	stream nextPutAll: self isoLanguage.
-	self isoCountry
-		ifNotNil: [stream nextPut: $-; nextPutAll: self isoCountry]! !
-
-!LocaleID methodsFor: 'printing'!
-storeOn: aStream 
-	aStream nextPut: $(.
-	aStream nextPutAll: self class name.
-	aStream nextPutAll: ' isoString: '.
-	aStream nextPutAll: '''' , self printString , ''''.
-	aStream nextPut: $).
-! !
-
-!NaturalLanguageTranslator class methodsFor: 'class initialization'!
-startUp: resuming 
-	resuming
-		ifFalse: [^ self].
-	self privateStartUp.! !
-
-!NaturalLanguageTranslator methodsFor: 'printing'!
-printOn: aStream
-	aStream nextPutAll: self class name; nextPut: $(; print: self localeID; nextPut: $)! !
 
 !ISOLanguageDefinition methodsFor: 'accessing'!
 iso2
@@ -2948,240 +2895,6 @@ localeChangedGently
 localeChangedListeners
 	^LocaleChangeListeners ifNil: [LocaleChangeListeners := OrderedCollection new]! !
 
-!LocaleID methodsFor: 'comparing'!
-= anotherObject
-	self class == anotherObject class
-		ifFalse: [^false].
-	^self isoLanguage = anotherObject isoLanguage
-		and: [self isoCountry = anotherObject isoCountry]! !
-
-!LocaleID methodsFor: 'comparing'!
-hash
-	^self isoLanguage hash bitXor: self isoCountry hash! !
-
-!LocaleID methodsFor: 'testing'!
-hasParent
-	^self isoCountry notNil! !
-
-!LocaleID methodsFor: 'printing'!
-posixName
-	"(LocaleID isoString: 'es-MX') posixName"
-	"(LocaleID isoString: 'es') posixName"
-	"language[_territory]"
-	^ self isoCountry
-		ifNil: [self isoLanguage]
-		ifNotNil: [self isoLanguage , '_' , self isoCountry]! !
-
-!LocaleID methodsFor: 'initialize'!
-isoLanguage: langString isoCountry: countryStringOrNil
-	isoLanguage _ langString.
-	isoCountry _ countryStringOrNil! !
-
-!LocaleID methodsFor: 'accessing'!
-displayCountry
-	^(ISOLanguageDefinition iso2Countries at: self isoCountry asUppercase ifAbsent: [ self isoCountry ]) ! !
-
-!LocaleID methodsFor: 'accessing'!
-displayLanguage
-	| language |
-	language _ (ISOLanguageDefinition iso2LanguageTable
-				at: self isoLanguage
-				ifAbsent: [^ self isoLanguage]) language.
-	^ self isoCountry
-		ifNil: [language]
-		ifNotNil: [language , ' (' , self displayCountry , ')']! !
-
-!LocaleID methodsFor: 'accessing'!
-isoCountry
-	^isoCountry! !
-
-!LocaleID methodsFor: 'accessing'!
-isoLanguage
-	^isoLanguage! !
-
-!LocaleID methodsFor: 'accessing'!
-isoString
-	^self asString! !
-
-!LocaleID methodsFor: 'accessing'!
-parent
-	^self class isoLanguage: self isoLanguage! !
-
-!LocaleID methodsFor: 'accessing'!
-translator
-	^ NaturalLanguageTranslator localeID: self ! !
-
-!LocaleID class methodsFor: 'accessing'!
-current
-	^Locale current localeID! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoLanguage: langString
-	^self isoLanguage: langString isoCountry: nil! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoLanguage: langString isoCountry: countryStringOrNil
-	^self new isoLanguage: langString isoCountry: countryStringOrNil! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoString: isoString
-	"Parse the isoString (<language>-<country>) into its components and return the matching LocaleID"
-	"LocaleID isoString: 'en' "
-	"LocaleID isoString: 'en-us' "
-
-	| parts language country |
-	parts _ isoString findTokens: #($- ).
-	language _ parts first.
-	parts size > 1
-		ifTrue: [country _ parts second].
-	^self isoLanguage: language isoCountry: country! !
-
-!LocaleID class methodsFor: 'instance creation'!
-posixName: aString 
-	^ self
-		isoString: (aString copyReplaceAll: '_' with: '-')! !
-
-!LocaleID class methodsFor: 'accessing-defaults'!
-default
-	^ self isoLanguage: 'en'! !
-
-!NaturalLanguageTranslator methodsFor: 'translation'!
-translate: aString inDomain: aDomainName
-	^ aString! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-atRandom
-
-	self subclassResponsibility.
-! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-domainRegistered: aDomainName
-	"notify that new TextDomain is registered.  Concrete subclass can responds to this event if needed"! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-domainUnregistered: aDomainName
-	"notify that new TextDomain is unregistered.  Concrete subclass can responds to this event if needed"! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-isDomainLoaded: aDomainName
-	"ask if translation dictionary for the domain has been loaded and available now for use"
-	self subclassResponsibility.! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-localeID
-	^id! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-localeID: anID
-	id _ anID! !
-
-!NaturalLanguageTranslator methodsFor: 'language switching'!
-setCurrent
-	"notify locale of the translator become current"
-! !
-
-!NaturalLanguageTranslator class methodsFor: 'actions'!
-reset
-	"Flush the translator instances"
-	
-	Translators _ nil! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-availableForLocaleID: localeID 
-	"Answer available locale ID.
-	If translator is not found for correct locale ID, then isoLanguage is
-	attempted for the key."
-	^ self translators
-		at: localeID
-		ifAbsent: [localeID hasParent
-				ifTrue: [self translators
-						at: localeID parent
-						ifAbsent: [self default]]
-				ifFalse: [self default]] ! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-availableLanguageLocaleIDs
-	"Return the locale ids for the currently available languages.  
-	Meaning those which either internally or externally have  
-	translations available."
-	"NaturalLanguageTranslator availableLanguageLocaleIDs"
-	^ self translators values collect:[:each | each localeID]! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-current
-	^ self availableForLocaleID: LocaleID current! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-current: aTranslator
-	"Register a translator that should receiver the translation messages"
-	
-	Current _ aTranslator! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-default
-	"Answer translator for backstop"
-	"self default translate: 'test'"
-	^ self new
-		localeID: (LocaleID isoLanguage: 'en')! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-domainRegistered: aDomainName
-	"notify that new TextDomain is registered"
-	self translators do: [:each | each domainRegistered: aDomainName]! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-domainUnregistered: aDomainName
-	"notify that new TextDomain is unregistered"
-	self translators do: [:each | each domainUnregistered: aDomainName]! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-localeChanged
-	"notify some project starts to use this locale.
-	 this facility may use the event to load translation data dynamically" 
-	self current setCurrent
-! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-removeLocaleID: localeID 
-	"self removeLocaleID: (LocaleID isoString: 'ja-kids')"
-	^ self translators
-		removeKey: localeID
-		ifAbsent: []! !
-
-!NaturalLanguageTranslator class methodsFor: 'accessing'!
-translators
-	^ Translators ifNil: [Translators _ Dictionary new]	! !
-
-!NaturalLanguageTranslator class methodsFor: 'class initialization' stamp: 'hlsf 2/20/2022 10:24:03'!
-initialize
-	Smalltalk addToStartUpList: NaturalLanguageTranslator
-	! !
-
-!NaturalLanguageTranslator class methodsFor: 'class initialization' stamp: 'hlsf 2/20/2022 10:25:12'!
-privateStartUp
-	self flag: #XXX.
-	self reset.
-	"GetTextTranslator reset."
-	self localeChanged.! !
-
-!NaturalLanguageTranslator class methodsFor: 'translation'!
-translate: aString
-	^ self translate: aString toLocale: LocaleID current! !
-
-!NaturalLanguageTranslator class methodsFor: 'translation' stamp: 'hlsf 2/20/2022 10:27:09'!
-translate: aString toLocale: localeID
-	| here domain |
-	self flag: #XXX.
-	here _ thisContext sender sender sender methodClass.
-	"domain _ TextDomainManager domainForClass: here."
-	^ self translate: aString toLocale: localeID inDomain: domain! !
-
-!NaturalLanguageTranslator class methodsFor: 'translation'!
-translate: aString toLocale: localeID inDomain: aDomainName
-	^ (self availableForLocaleID: localeID)
-		translate: aString inDomain: aDomainName! !
-
 !String methodsFor: '*System-Locales'!
 translated
 "answer the receiver translated to the default language"
@@ -3194,4 +2907,3 @@ translatedTo: localeID
 	^ NaturalLanguageTranslator translate: self toLocale: localeID! !
 ISOLanguageDefinition initialize!
 Locale initialize!
-NaturalLanguageTranslator initialize!
