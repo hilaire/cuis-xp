@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5090] on 4 March 2022 at 11:13:54 am'!
+'From Cuis 6.0 [latest update: #5091] on 5 March 2022 at 2:57:40 pm'!
 'Description '!
-!provides: 'Gettext' 1 0!
+!provides: 'Gettext' 1 5!
 SystemOrganization addCategory: 'Gettext'!
 
 
@@ -201,72 +201,28 @@ appendTranslations: domains for: someSelectors
 		self appendStringReceivers: selector into: domains]
 ! !
 
-!GetTextExporter methodsFor: 'exporting'!
-dirNameCategory: category translator: translator 
-	"Answer a file name for the category. Make one if it is not exist yet.
-	Make template file name if translator is nil"
-	"self new dirNameCategory: 'Morphic-Scripting Support' translator:
-	NaturalLanguageTranslator current"
-	"self new dirNameCategory: 'Morphic-Scripting Support' translator: nil"
-	| safeCategory fileName dirName pathName |
-	safeCategory _ category copyReplaceAll: ' ' with: ':='.
-	fileName _ translator
-				ifNil: [safeCategory , '.pot']
-				ifNotNil: [translator localeID posixName , '.po'].
-	dirName _ (safeCategory findTokens: '-')
-				inject: 'po'
-				into: [:aString :next | aString , FileSystem disk delimiter asString , next].
-	pathName _ dirName , FileSystem disk delimiter asString , fileName.
-	(dirName asFileReference ensureCreateDirectory).
-	^ pathName! !
+!GetTextExporter methodsFor: 'exporting' stamp: 'hlsf 3/5/2022 14:32:37'!
+dirNameDomain: domain
+"Answer a file name for the domain."
+	^ 'po' asDirectoryEntry / domain // (domain , '.pot')
+! !
 
-!GetTextExporter methodsFor: 'exporting'!
-dirNameDomain: domain translator: translator 
-	"Answer a file name for the domain. Make one if it is not exist yet.
-	Make template file name if translator is nil"
-	"self new dirNameDomain: 'etoys' translator:
-	NaturalLanguageTranslator current"
-	"self new dirNameDomain: 'etoys' translator: nil"
-	| fileName dirName pathName |
-	"safeCategory _ category copyReplaceAll: ' ' with: ':='."
-	fileName _ translator
-				ifNil: [domain , '.pot']
-				ifNotNil: [translator localeID posixName , '.po'].
-	dirName _ 'po', FileSystem disk delimiter asString , domain.
-	pathName _ dirName ,  FileSystem disk delimiter asString , fileName.
-	(dirName asFileReference ensureCreateDirectory).
-	^ pathName! !
-
-!GetTextExporter methodsFor: 'exporting'!
-exportTemplate
-	"GetTextExporter new exportTemplate"
-	self exportTranslator: nil! !
-
-!GetTextExporter methodsFor: 'exporting'!
-exportTranslator: translator 
-	"Export translation files. the file extention is 'po', or 'pot' if translator is nil "
-	"GetTextExporter new exportTranslator: NaturalLanguageTranslator current "
-	
-	self 
-		exportTranslator: translator 
-		for: self class defaultSelectors ! !
-
-!GetTextExporter methodsFor: 'exporting'!
-exportTranslator: translator for: someSelectors
-	"Export translation files. the file extention is 'po', or 'pot' if translator is nil "
-	"GetTextExporter new exportTranslator: NaturalLanguageTranslator current "
+!GetTextExporter methodsFor: 'exporting' stamp: 'hlsf 3/5/2022 14:49:45'!
+exportFor: someSelectors
+"Export translation files. the file extention is 'pot'"
 	| domains |
 	domains _ Dictionary new.
 	self appendTranslations: domains for: someSelectors.
-	domains
-		keysAndValuesDo: [:domainName :value |
-			self
-				export: value
-				translator: translator
-				domain: domainName]! !
+	domains 	keysAndValuesDo: [:domainName :value | 	
+		self export: value 	domain: domainName]! !
 
-!GetTextExporter methodsFor: 'file out'!
-exportBody: literals translator: translator 
+!GetTextExporter methodsFor: 'exporting' stamp: 'hlsf 3/5/2022 14:48:19'!
+exportTemplate
+	"GetTextExporter new exportTemplate"
+	self exportFor: self class defaultSelectors ! !
+
+!GetTextExporter methodsFor: 'file out' stamp: 'hlsf 3/5/2022 14:41:32'!
+exportBody: literals
 	"Export a gettext file body. literals is a dictionary of keyword ->
 	#(MethodReference...) in the textDomain."
 	"Build {sortKey. comment. msgid } to optimize sorting (getting category is
@@ -274,35 +230,27 @@ exportBody: literals translator: translator
 	If there are two or more methods for a mgsid, only first method
 	(alphabetical) is used for sorting."
 	| sorted msgid sortedMethods category sortKey comment triplets commentUnderLined |
-	triplets _ literals associations
-				collect: [:assoc | 
-					msgid _ assoc key.
-					sortedMethods _ assoc value asArray sort.
-					category _ (Smalltalk at: sortedMethods first theNonMetaClassName) category asString.
-					sortKey _ category , ',' , sortedMethods first printString , ',' , msgid.
-					comment _ (sortedMethods
-								collect: [:each | each actualClass asString , '>>' , each selector asString])
-								inject: category
-								into: [:result :methodName | result , ',' , methodName].
-					"Replace white spaces to _ because gettext tool might
-					replace a space to a new line some times, and it makes
-					difficult to take a diff."
-					commentUnderLined _ comment copyReplaceAll: ' ' with: ':='.
-					Array
-						with: sortKey
-						with: commentUnderLined
-						with: msgid].
+	triplets _ literals associations collect: [:assoc | 
+		msgid _ assoc key.
+		sortedMethods _ assoc value asArray sort.
+		category _ sortedMethods first actualClass category asString.
+		sortKey _ category , ',' , sortedMethods first printString , ',' , msgid.
+		comment _ (sortedMethods
+			collect: [:each | each actualClass asString , '>>' , each selector asString])
+			inject: category
+			into: [:result :methodName | result , ',' , methodName].
+		"Replace white spaces to _ because gettext tool might replace a space to 
+		a new line some times, and it makes 		difficult to take a diff."
+		commentUnderLined _ comment copyReplaceAll: ' ' with: '_'.
+		Array 	with: sortKey with: commentUnderLined with: msgid].
+	
 	"Sort and output the words"
-	sorted _ triplets
-				sort: [:a :b | a first <= b first].
-	sorted
-		do: [:triplet | 
-			comment _ triplet second.
-			msgid _ triplet third.
-			self exportRecordHeader: comment.
-			self
-				exportPhrase: msgid
-				translation: (self translationFor: msgid in: translator)]! !
+	sorted _ triplets			sort: [:a :b | a first <= b first].
+	sorted 	do: [:triplet | 
+		comment _ triplet second.
+		msgid _ triplet third.
+		self exportRecordHeader: comment.
+		self exportPhrase: msgid]! !
 
 !GetTextExporter methodsFor: 'accessing'!
 stream
@@ -312,7 +260,7 @@ stream
 stream: aStream
 	stream _ aStream! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:18:51'!
 appendStringReceivers: aSymbol into: domains
 	| literals references domainName methodReference keywords found |
 	
@@ -320,8 +268,7 @@ appendStringReceivers: aSymbol into: domains
 	found do: [ :assoc |
 		methodReference _ assoc key.
 		keywords _ assoc value.
-		domainName _ self getTextDomainForClassCategory:
-			(Smalltalk at: methodReference theNonMetaClassName) category.
+		domainName _ self getTextDomainForClassCategory:			methodReference methodClass category.
 		literals _ domains at: domainName ifAbsentPut: [Dictionary new].
 		keywords do: [ :literal |
 			references _ literals at: literal ifAbsentPut: [OrderedCollection new].
@@ -330,19 +277,19 @@ appendStringReceivers: aSymbol into: domains
 	]. 
 ! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:42:28'!
 createHeaders
 	| headers |
 	headers _ OrderedCollection new.
-	headers add: 'Project-Id-Version' -> 'Pharo'.
+	headers add: 'Project-Id-Version' -> 'Cuis'.
 	headers add: 'POT-Creation-Date' -> self currentDateAndTime.
 	headers add: 'PO-Revision-Date' -> self currentDateAndTime.
 	headers add: 'Last-Translator' -> ''.
 	headers add: 'Language-Team' -> ''.
 	headers add: 'MIME-Version' -> '1.0'.
-	headers add: 'Content-Type' -> ('text/plain; charset=', stream converter class encodingNames first).
+	headers add: 'Content-Type' -> ('text/plain; charset=ascii').
 	headers add: 'Content-Transfer-Encoding' -> '8bit'.
-	headers add: 'X-Pharo-SystemVersion' -> (SystemVersion current asString).
+	headers add: 'X-Cuis-SystemVersion' -> (SystemVersion current asString).
 	^ headers! !
 
 !GetTextExporter methodsFor: 'private'!
@@ -357,29 +304,28 @@ currentDateAndTime
 				on: aStream.
 			aStream nextPutAll: '-0000']! !
 
-!GetTextExporter methodsFor: 'private'!
-export: literals translator: translator domain: domainName 
-	| fileName |
-	"Export a gettext file in a category. literals is a dictionary of keyword -> #(MethodReference...) in the textDomain."
-	fileName _ self dirNameDomain: domainName translator: translator.
-	[stream _ FileStream forceNewFileNamed: fileName.
-	stream lineEndConvention: #lf.
-	stream converter: UTF8TextConverter new.
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 14:43:11'!
+export: literals domain: domainName 
+"Export a gettext file in a category. literals is a dictionary of keyword -> #(MethodReference...) in the textDomain."
+	| fileEntry |	
+	fileEntry _ self dirNameDomain: domainName.
+	fileEntry ensureParent.
+	[stream _ fileEntry forceWriteStream.
 	self exportHeader: domainName.
-	self exportBody: literals translator: translator]
-		ensure: [stream close]! !
+	self exportBody: literals] 		
+		ensure: 	[stream close]! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:48:57'!
 exportHeader: domainName
 	| headers |
 	self exportTag: 'msgid' msg: ''.
 	self exportTag: 'msgstr' msg: ''.
 	headers _ self createHeaders.
-	headers add: 'X-Pharo-Domain' -> domainName.
+	headers add: 'X-Cuis-Domain' -> domainName.
 	headers do: [:each | self exportHeaderLineKey: each key value: each value].
-	stream cr; cr! !
+	stream lf! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:48:29'!
 exportHeaderLineKey: keyString value: valueString 
 	stream nextPut: $";
 		 nextPutAll: keyString;
@@ -388,54 +334,24 @@ exportHeaderLineKey: keyString value: valueString
 		 nextPutAll: valueString;
 		 nextPutAll: '\n';
 		 nextPut: $";
-		 cr.! !
+		 lf.! !
 
-!GetTextExporter methodsFor: 'private'!
-exportPhrase: phraseString translation: translationString 
-	| normalizedTrans tmp transStartsWithCR transEndsWithCR|
-	phraseString isEmpty
-		ifTrue: [^ self].
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 14:38:35'!
+exportPhrase: phraseString
+	phraseString ifEmpty: [^ self].
 	self exportTag: 'msgid' msg: phraseString.
-	translationString size = 0 ifTrue: [
-		normalizedTrans _ ''
-	] ifFalse: [
-		transEndsWithCR _ translationString last = (Character cr).
-		phraseString last = (Character cr) ifTrue: [
-			transEndsWithCR ifTrue: [
-				normalizedTrans _ translationString
-			] ifFalse: [
-				normalizedTrans _  translationString , String cr
-			]
-		] ifFalse: [
-			transEndsWithCR ifTrue: [
-				normalizedTrans _ translationString allButLast
-			] ifFalse: [
-				normalizedTrans _ translationString
-			]
-		].
-		transStartsWithCR _ normalizedTrans first = (Character cr).
-		phraseString first = (Character cr) ifTrue: [
-			transStartsWithCR ifFalse: [
-				tmp _ (Character cr asString) , normalizedTrans.
-				normalizedTrans _ tmp.
-			]
-		] ifFalse: [
-			transStartsWithCR ifTrue: [
-				normalizedTrans _ normalizedTrans allButFirst
-			]
-		]
-	].
-	self exportTag: 'msgstr' msg: normalizedTrans.
-	stream cr! !
+	self exportTag: 'msgstr' msg: ''.
+	stream lf
+! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:56:23'!
 exportRecordHeader: context
 	stream 
 		nextPutAll: '#: ';
 		nextPutAll: context;
-		cr.! !
+		lf.! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:55:43'!
 exportTag: tag msg: aString 
 	| pos end line |
 	(aString indexOf: Character cr)
@@ -453,10 +369,10 @@ exportTag: tag msg: aString
 						
 						nextPutAll: (self formatString: line);
 						 nextPut: $";
-						 cr.
+						 lf.
 					pos _ end + 1]]! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:54:57'!
 exportTag: tag singleLine: aString 
 	stream nextPutAll: tag.
 	stream space.
@@ -464,14 +380,14 @@ exportTag: tag singleLine: aString
 	stream
 		nextPutAll: (self formatString: aString).
 	stream nextPut: $".
-	stream cr! !
+	stream lf! !
 
-!GetTextExporter methodsFor: 'private'!
+!GetTextExporter methodsFor: 'private' stamp: 'hlsf 3/5/2022 12:37:08'!
 formatReplacements
 	| replacements |
 	replacements _ OrderedCollection new.
 	replacements add: '\' -> '\\'.
-	replacements add: String cr -> '\r'.
+	replacements add: String crString -> '\r'.
 	replacements add: String tab -> '\t'.
 	replacements add: '"' -> '\"'.
 	^ replacements! !
@@ -489,27 +405,17 @@ getTextDomainForClassCategory: aClassCategory
 	^TextDomainManager domainForClassCategory:  aClassCategory
 		! !
 
-!GetTextExporter methodsFor: 'private'!
-translationFor: aKey in: translator
-	translator ifNil: [^''].
-	translator translations at: aKey ifPresent: [:s | ^s].
-	"If we have old camelCase translations, make space-separated words"
-	translator translations at: aKey toCamelCase ifPresent: [:s | 
-		(s includes: Character space) ifTrue: [^s].
-		^s fromCamelCase].
-	^''! !
-
 !GetTextExporter class methodsFor: 'utilities'!
 exportTemplate
 	"GetTextExporter exportTemplate"
 	self new exportTemplate! !
 
-!GetTextExporter class methodsFor: 'utilities'!
+!GetTextExporter class methodsFor: 'utilities' stamp: 'hlsf 3/5/2022 14:48:45'!
 exportTemplateFor: someSelectors
 	"Writes files to be used as the translation template.
 	It will include strings that are receivers of any of someSelectors"
 	
-	self new exportTranslator: nil for: someSelectors ! !
+	self new exportFor: someSelectors ! !
 
 !GetTextExporter class methodsFor: 'utilities'!
 exportTemplateIncluding: aSelector
@@ -844,23 +750,12 @@ translate: aString inDomain: aDomainName
 	^ aString! !
 
 !NaturalLanguageTranslator methodsFor: 'accessing'!
-atRandom
-
-	self subclassResponsibility.
-! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
 domainRegistered: aDomainName
 	"notify that new TextDomain is registered.  Concrete subclass can responds to this event if needed"! !
 
 !NaturalLanguageTranslator methodsFor: 'accessing'!
 domainUnregistered: aDomainName
 	"notify that new TextDomain is unregistered.  Concrete subclass can responds to this event if needed"! !
-
-!NaturalLanguageTranslator methodsFor: 'accessing'!
-isDomainLoaded: aDomainName
-	"ask if translation dictionary for the domain has been loaded and available now for use"
-	self subclassResponsibility.! !
 
 !NaturalLanguageTranslator methodsFor: 'accessing'!
 localeID
@@ -992,15 +887,6 @@ cleanUp
 	AllKnownPhrases _ nil! !
 
 !GetTextTranslator methodsFor: 'accessing'!
-atRandom
-
-	| v |
-	moFiles ifEmpty: [^ ''].
-	(v _ moFiles atRandom value) ifNil: [^ ''].
-	^ v atRandom.
-! !
-
-!GetTextTranslator methodsFor: 'accessing'!
 domainRegistered: aDomainName
 	"only current translator actually load the MO, to minimize loading time.
 	 other translator will load anyway when it goes current"
@@ -1012,13 +898,6 @@ domainRegistered: aDomainName
 domainUnregistered: aDomainName
 	moFiles removeKey: aDomainName ifAbsent: [^self]
 	! !
-
-!GetTextTranslator methodsFor: 'accessing'!
-isDomainLoaded: aDomainName
-	| mo |
-	mo _ moFiles at: aDomainName ifAbsent: [nil].
-	^mo isNil not.
-! !
 
 !GetTextTranslator methodsFor: 'accessing'!
 loadMOFiles
@@ -1033,13 +912,6 @@ refresh
 	
 	moFiles _ Dictionary new
 ! !
-
-!GetTextTranslator methodsFor: 'accessing'!
-reloadMOFiles
-	
-	self deprecated: 'Use the more intuitive refresh method'.
-	
-	self refresh! !
 
 !GetTextTranslator methodsFor: 'language switching'!
 setCurrent
@@ -1294,7 +1166,7 @@ refresh
 	].
 	Classes addAll: LoneClasses.! !
 
-!TextDomainManager class methodsFor: 'class initialization'!
+!TextDomainManager class methodsFor: 'class initialization' stamp: 'hlsf 3/5/2022 12:17:54'!
 initialize
 	"	TextDomainManager initialize	"
 
@@ -1302,7 +1174,7 @@ initialize
 	Classes _ IdentityDictionary new.
 	LoneClasses _ IdentityDictionary new.
 	DomainInfos _ Dictionary new.
-	self defaultDomain: 'pharo'.! !
+	self defaultDomain: 'cuis'.! !
 
 !TranslatedReceiverFinder methodsFor: 'private'!
 arraySearch: aSymbol fromArray: anArray addTo: aCollection 
@@ -1332,15 +1204,15 @@ arraySearch: aSymbol messageNode: aParseNode addTo: aCollection
 					addTo: aCollection]]].		
 	^ aCollection! !
 
-!TranslatedReceiverFinder methodsFor: 'private'!
+!TranslatedReceiverFinder methodsFor: 'private' stamp: 'hlsf 3/5/2022 11:42:28'!
 search: aSymbol messageNode: aParseNode addTo: aCollection 
 	aParseNode nodesDo: [:node | 
 		node isMessage ifTrue: [
-			node selector = aSymbol ifTrue: [
+			node selectorSymbol = aSymbol ifTrue: [
 				aCollection add: node]]].
 	^ aCollection! !
 
-!TranslatedReceiverFinder methodsFor: 'accessing'!
+!TranslatedReceiverFinder methodsFor: 'accessing' stamp: 'hlsf 3/5/2022 11:54:04'!
 findWordsWith: aSymbol in: aMethodReference 
 	"Find words for translation with the symbol in a method. See
 	LanguageEditorTest >>testFindTranslatedWords"
@@ -1348,46 +1220,45 @@ findWordsWith: aSymbol in: aMethodReference
 	message _ MethodReference new setStandardClass: Morph class
 	methodSymbol: #supplementaryPartsDescriptions.
 	self new findWordsWIth: #translatedNoop in: message"
-	| messages keywords aParseNode |
+	| messages keywords methodNode |
 
-	aParseNode _ aMethodReference methodClass parseTreeFor: aMethodReference selector.
+	methodNode _ aMethodReference methodNode.
 	"Find from string literal"
 	messages _ Set new.
 	self
 		search: aSymbol
-		messageNode: aParseNode
+		messageNode: methodNode
 		addTo: messages.
 	keywords _ OrderedCollection new.
 	messages
 		select: [:aMessageNode | aMessageNode receiver isLiteralNode]
-		thenDo: [:aMessageNode | keywords add: aMessageNode receiver value
-				"literalStringsDo: [:literal | keywords add: literal]"].
+		thenDo: [:aMessageNode | keywords add: aMessageNode receiver literalValue			].
 	"Find from array literal"
 	self
 		arraySearch: aSymbol
-		messageNode: aParseNode
+		messageNode: methodNode
 		addTo: keywords.
 	^ keywords! !
 
-!TranslatedReceiverFinder methodsFor: 'accessing'!
+!TranslatedReceiverFinder methodsFor: 'accessing' stamp: 'hlsf 3/5/2022 11:10:34'!
 nonLiteralReceiversOf: aSymbol
 	"self new nonLiteralReceiversOf: aSymbol"
 	| receivers |
 	"Answer method references of non literal senders of #translated"
-	^ (SystemNavigation default allCallsOn: aSymbol)
+	^ (Smalltalk allCallsOn: aSymbol)
 		select: [:message | 
 			receivers _ OrderedCollection new.
-			self search: aSymbol messageNode: (message realClass parseTreeFor: message selector) addTo: receivers.
+			self search: aSymbol messageNode: message methodNode addTo: receivers.
 			receivers
 				anySatisfy: [:each | (each receiver isLiteralNode) not]]! !
 
-!TranslatedReceiverFinder methodsFor: 'accessing'!
+!TranslatedReceiverFinder methodsFor: 'accessing' stamp: 'hlsf 3/5/2022 11:47:45'!
 stringReceiversOf: aSymbol
 	"Find string receivers for a symbol.
 	Answer a collection of aMethodReference -> {keyword. keyword...}"
 	"self new stringReceiversOf: #translated"
 	| keywords methodReferences |
-	methodReferences _ SystemNavigation default allCallsOn: aSymbol.
+	methodReferences _ Smalltalk allCallsOn: aSymbol.
 	^ methodReferences inject: OrderedCollection new into: [:list :next |
 		keywords _ self findWordsWith: aSymbol in: next.
 		keywords
@@ -1437,10 +1308,10 @@ searchReturnNode: aReturnNode addTo: aCollection
 	(aReturnNode expr isMemberOf: MessageNode) ifTrue: [self searchMessageNode: aReturnNode expr addTo: aCollection].
 ! !
 
-!TranslatedReceiverFinder methodsFor: 'actions'!
+!TranslatedReceiverFinder methodsFor: 'actions' stamp: 'hlsf 3/5/2022 11:07:48'!
 senders
 	| m o |
-	m _ SystemNavigation default allCallsOn: #translated.
+	m _ Smalltalk allCallsOn: #translated.
 	m _ m
 		collect: [ :e | 
 			e classIsMeta
@@ -1450,10 +1321,10 @@ senders
 	m do: [ :e | self searchMethodNode: e addTo: o ].
 	^ o sort! !
 
-!TranslatedReceiverFinder class methodsFor: 'utilities'!
+!TranslatedReceiverFinder class methodsFor: 'utilities' stamp: 'hlsf 3/5/2022 11:08:25'!
 browseNonLiteralReceivers
 	"TranslatedReceiverFinder browseNonLiteralReceivers"
-	SystemNavigation default
+	Smalltalk
 		browseMessageList: (self new nonLiteralReceiversOf: #translated)  asSortedCollection
 		name: 'Non literal receivers of #translated'
 		autoSelect: 'translated'! !
