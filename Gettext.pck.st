@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 9:29:36 pm'!
+'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 9:47:24 pm'!
 'Description '!
-!provides: 'Gettext' 1 10!
+!provides: 'Gettext' 1 13!
 SystemOrganization addCategory: 'Gettext'!
 
 
@@ -635,7 +635,7 @@ translationFor: aString
 	^ (self searchFor: aString) ifNil: [aString]
 ! !
 
-!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 18:31:11'!
+!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:45:58'!
 loadHeader: strm
 	strm binary.
 	magic _  strm nextUnsignedInt32BigEndian: true .
@@ -644,24 +644,17 @@ loadHeader: strm
 		ifFalse: [
 			magic = 16r950412DE 
 				ifTrue: [isLittleEndian _ false]
-				ifFalse: [ self error: 'invalid MO']
-		].
+				ifFalse: [ self error: 'invalid MO'] 		].
 	revision _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 	nStrings _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 	originalTableOffset _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 	translatedTableOffset _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 	hashTableSize _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
-	hashTableOffset _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
+	hashTableOffset _ strm nextUnsignedInt32BigEndian: isLittleEndian not! !
 
-"nextInt32From: strm.
-	^isLittleEndian 
-			ifTrue: [^strm nextLittleEndianNumber: 4]
-			ifFalse: [^strm nextInt32]
-"! !
-
-!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 18:31:18'!
+!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:46:21'!
 loadStringPointers: strm offset: tableOffset
-	"returns tupple {arrayOfOffsetToString  arrayOfLengthOfString}"
+"returns tupple {arrayOfOffsetToString  arrayOfLengthOfString}"
 	| offsetTable lenTable len offset tupple |
 	offsetTable _ IntegerArray new: nStrings.
 	lenTable _ IntegerArray new: nStrings.
@@ -671,22 +664,20 @@ loadStringPointers: strm offset: tableOffset
 		len _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 		offset _ strm nextUnsignedInt32BigEndian: isLittleEndian not.
 		offsetTable at: index put: offset.
-		lenTable at: index put: len.
-	].
+		lenTable at: index put: len ].
 	tupple _ Array new: 2.
 	tupple at: 1 put: offsetTable.
 	tupple at: 2 put:  lenTable.
-	^tupple
-! !
+	^tupple! !
 
-!MOFile methodsFor: 'private'!
+!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:45:43'!
 loadStrings: strm pointers: table
-	"We convert string encoding at load time.
-	Currently, we do not take care to set the leadingChar for a languageEnvironment"
+"We convert string encoding at load time.
+Currently, we do not take care to set the leadingChar for a languageEnvironment"
 	^self loadStrings: strm pointers: table encoding: #utf8 languageEnvironment: nil
 ! !
 
-!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:25:28'!
+!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:45:35'!
 loadStrings: strm pointers: tupple encoding: encodingName languageEnvironment: env
 	| offsetTable lenTable strings |
 	strm ascii.
@@ -701,10 +692,7 @@ loadStrings: strm pointers: tupple encoding: encodingName languageEnvironment: e
 		rawStr _  (String new: byteLength) writeStream.
 		strm position:  start.
 		[strm position < endPos] whileTrue: [rawStr nextPut: strm next].
-		strings at: index put: rawStr contents.
-		
-
-	].
+		strings at: index put: rawStr contents	].
 	^strings.! !
 
 !MOFile class methodsFor: 'class initialization'!
@@ -830,10 +818,10 @@ translators
 translate: aString
 	^ self translate: aString toLocale: LocaleID current! !
 
-!NaturalLanguageTranslator class methodsFor: 'translation' stamp: 'hlsf 3/9/2022 18:01:35'!
+!NaturalLanguageTranslator class methodsFor: 'translation' stamp: 'hlsf 3/9/2022 21:42:29'!
 translate: aString toLocale: localeID
 	| here domain |
-	here _ thisContext sender  methodClass. "sender sender methodClass."
+	here _ thisContext sender sender sender methodClass.
 	domain _ TextDomainManager domainForClass: here.
 	^ self translate: aString toLocale: localeID inDomain: domain! !
 
@@ -977,6 +965,38 @@ userDefaultLocaleDirs
 	^UserDefaultLocaleDirs ifNil: [UserDefaultLocaleDirs _ OrderedCollection new]
 ! !
 
+!GetTextTranslator class methodsFor: 'private' stamp: 'hlsf 3/9/2022 17:48:52'!
+availableLanguageLocaleIDs
+"GetTextTranslator availableLanguageLocaleIDs"
+	| ids dirs localeDirForLang directoryNames |
+	ids _ Set new.
+	dirs _ Set new.
+	dirs addAll: LocaleDirsForDomain values.
+	dirs addAll: self defaultLocaleDirs.
+	dirs do: [:dir |
+		| localesDir |
+		localesDir _ dir assureExistence. 
+		directoryNames _ [localesDir directoryNames] on: FileDoesNotExistException do: [:e | #()].
+		directoryNames			do: [:langDirName | | localeID  |
+			localeID _ LocaleID posixName: langDirName.
+			localeDirForLang _ (localesDir / localeID posixName / 'LC_MESSAGES') assureExistence.
+			localeDirForLang ifNotNil: [
+				(localeDirForLang fileMatching: '*.mo') ifNotNil: [ids add: localeID]
+			]
+		].
+	].
+	^ids! !
+
+!GetTextTranslator class methodsFor: 'private' stamp: 'hlsf 3/9/2022 17:48:45'!
+createAvailableTranslators
+"Load new instances of translators corresponding to the currently available translation files"
+	self setupLocaleDirs.
+	self availableLanguageLocaleIDs do: [ :localeID |
+		NaturalLanguageTranslator translators 
+			at: localeID 
+			put: (self newForLocaleID: localeID).
+	]! !
+
 !GetTextTranslator class methodsFor: 'private' stamp: 'hlsf 3/9/2022 15:57:31'!
 findMOForLocaleID: id domain: aDomainName
 	| moFile |
@@ -999,38 +1019,6 @@ privateStartUp
 !GetTextTranslator class methodsFor: 'instance creation'!
 newForLocaleID: id
 	^self new localeID: id! !
-
-!GetTextTranslator class methodsFor: 'deprecated' stamp: 'hlsf 3/9/2022 17:48:52'!
-availableLanguageLocaleIDs
-"GetTextTranslator availableLanguageLocaleIDs"
-	| ids dirs localeDirForLang directoryNames |
-	ids _ Set new.
-	dirs _ Set new.
-	dirs addAll: LocaleDirsForDomain values.
-	dirs addAll: self defaultLocaleDirs.
-	dirs do: [:dir |
-		| localesDir |
-		localesDir _ dir assureExistence. 
-		directoryNames _ [localesDir directoryNames] on: FileDoesNotExistException do: [:e | #()].
-		directoryNames			do: [:langDirName | | localeID  |
-			localeID _ LocaleID posixName: langDirName.
-			localeDirForLang _ (localesDir / localeID posixName / 'LC_MESSAGES') assureExistence.
-			localeDirForLang ifNotNil: [
-				(localeDirForLang fileMatching: '*.mo') ifNotNil: [ids add: localeID]
-			]
-		].
-	].
-	^ids! !
-
-!GetTextTranslator class methodsFor: 'deprecated' stamp: 'hlsf 3/9/2022 17:48:45'!
-createAvailableTranslators
-"Load new instances of translators corresponding to the currently available translation files"
-	self setupLocaleDirs.
-	self availableLanguageLocaleIDs do: [ :localeID |
-		NaturalLanguageTranslator translators 
-			at: localeID 
-			put: (self newForLocaleID: localeID).
-	]! !
 
 !GetTextTranslator class methodsFor: 'actions'!
 reset
