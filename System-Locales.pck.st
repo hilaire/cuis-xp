@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5090] on 4 March 2022 at 11:14:01 am'!
+'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 10:03:02 pm'!
 'Description '!
-!provides: 'System-Locales' 1 3!
+!provides: 'System-Locales' 1 4!
 SystemOrganization addCategory: 'System-Locales'!
 
 
@@ -2894,16 +2894,5 @@ localeChangedGently
 !Locale class methodsFor: 'notification' stamp: 'hlsf 2/20/2022 09:55:30'!
 localeChangedListeners
 	^LocaleChangeListeners ifNil: [LocaleChangeListeners := OrderedCollection new]! !
-
-!String methodsFor: '*System-Locales'!
-translated
-"answer the receiver translated to the default language"
-	^ NaturalLanguageTranslator translate: self
-! !
-
-!String methodsFor: '*System-Locales'!
-translatedTo: localeID 
-	"answer the receiver translated to the given locale id"
-	^ NaturalLanguageTranslator translate: self toLocale: localeID! !
 ISOLanguageDefinition initialize!
 Locale initialize!

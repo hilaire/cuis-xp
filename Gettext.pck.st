@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 9:47:24 pm'!
+'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 10:03:00 pm'!
 'Description '!
-!provides: 'Gettext' 1 13!
+!provides: 'Gettext' 1 14!
 SystemOrganization addCategory: 'Gettext'!
 
 
@@ -1309,6 +1309,17 @@ browseNonLiteralReceivers
 		browseMessageList: (self new nonLiteralReceiversOf: #translated)  asSortedCollection
 		name: 'Non literal receivers of #translated'
 		autoSelect: 'translated'! !
+
+!String methodsFor: '*Gettext'!
+translated
+"answer the receiver translated to the default language"
+	^ NaturalLanguageTranslator translate: self
+! !
+
+!String methodsFor: '*Gettext'!
+translatedTo: localeID 
+	"answer the receiver translated to the given locale id"
+	^ NaturalLanguageTranslator translate: self toLocale: localeID! !
 MOFile initialize!
 NaturalLanguageTranslator initialize!
 GetTextTranslator initialize!
