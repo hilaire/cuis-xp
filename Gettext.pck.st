@@ -1,6 +1,7 @@
-'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 10:03:00 pm'!
+'From Cuis 6.0 [latest update: #5091] on 11 March 2022 at 10:33:16 am'!
 'Description '!
-!provides: 'Gettext' 1 14!
+!provides: 'Gettext' 1 17!
+!requires: 'System-Locales' 1 4 nil!
 SystemOrganization addCategory: 'Gettext'!
 
 
@@ -119,9 +120,12 @@ Implementation notes:
 	After that the translated string is converted on demand. 
 !
 
-!NaturalLanguageTranslator commentStamp: '' prior: 0!
+!NaturalLanguageTranslator commentStamp: '<historical>' prior: 0!
 abstract class of natural language translator.
-Class side manages and holds loaded instances of concrete classes.!
+Class side manages and holds loaded instances of concrete classes.
+
+To refresh translators:
+NaturalLanguageTranslator privateStartUp!
 
 !GetTextTranslator commentStamp: '' prior: 0!
 emulation of gettext runtime
@@ -135,21 +139,26 @@ I hold criteria for deciding wheter a systemCategory belongs to domain.
 - categories is for specifying fine grained criterion.
 !
 
-!TextDomainManager commentStamp: '' prior: 0!
-I manages mapping from class category to textdomain.
+!TextDomainManager commentStamp: '<historical>' prior: 0!
+I manages mapping from class category to textdomain (.mo files).
+
+Usage:
+	TextDomainManager registerCategoryPrefix: 'DrGeo' domain: 'drgeo'.
+	TextDomainManager unregisterDomain: 'DrGeo'.
+
+	TextDomainManager registerClass: #TerseGuideHelp domain: 'guides'.
+
+The domain name map to a .mo file in {image|vm}Path/locale/{lang}/LC_MESSAGES/domain.mo
+For example locale/fr/LC_MESSAGES/drgeo.mo
+{lang} is the host language locale resolved by the System-Locales package.
 
 Class variables:
- ClassCategories	IdentityDictionary -- classCategory -> domainName 
- Classes			IdentityDictionary -- class name (a Symbol) -> domainName   (a cache only!!)
- DefaultDomain	String -- the default domain name
- DomainInfos		Dictionary -- domainName -> a TextDomainInfo
- LoneClasses		IdentityDictionary -- class name (a Symbol) -> domainName.  For classes whose entire category are not all in the same domain (BookMorph and QuickGuideMorph)
+ ClassCategories				IdentityDictionary -- classCategory -> domainName 
+ Classes				IdentityDictionary -- class name (a Symbol) -> domainName   (a cache only!!)
+ DefaultDomain				String -- the default domain name
+ DomainInfos				Dictionary -- domainName -> a TextDomainInfo
+ LoneClasses				IdentityDictionary -- class name (a Symbol) -> domainName.  For classes whose entire category are not all in the same domain (BookMorph and QuickGuideMorph)
 
-TextDomainManager registerCategoryPrefix: 'DrGeoII' domain: 'DrGeoII'.
-TextDomainManager unregisterDomain: 'DrGeoII'.
-
-TextDomainManager registerClass: #QuickGuideMorph domain: 'quickguides'.
-TextDomainManager registerClass: #QuickGuideHolderMorph  domain: 'quickguides'.
 !
 
 !TranslatedReceiverFinder commentStamp: '' prior: 0!
@@ -670,20 +679,14 @@ loadStringPointers: strm offset: tableOffset
 	tupple at: 2 put:  lenTable.
 	^tupple! !
 
-!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:45:43'!
+!MOFile methodsFor: 'private' stamp: 'hlsf 3/11/2022 10:31:38'!
 loadStrings: strm pointers: table
 "We convert string encoding at load time.
 Currently, we do not take care to set the leadingChar for a languageEnvironment"
-	^self loadStrings: strm pointers: table encoding: #utf8 languageEnvironment: nil
-! !
-
-!MOFile methodsFor: 'private' stamp: 'hlsf 3/9/2022 21:45:35'!
-loadStrings: strm pointers: tupple encoding: encodingName languageEnvironment: env
 	| offsetTable lenTable strings |
 	strm ascii.
-	"	converter: (TextConverter newForEncoding: encodingName)."
-	offsetTable _  tupple first.
-	lenTable _ tupple second.
+	offsetTable _  table first.
+	lenTable _ table second.
 	strings _ Array new: nStrings.
 	1 to: nStrings do: [:index | |  rawStr start byteLength endPos|
 		start _ offsetTable at: index.
@@ -692,7 +695,7 @@ loadStrings: strm pointers: tupple encoding: encodingName languageEnvironment: e
 		rawStr _  (String new: byteLength) writeStream.
 		strm position:  start.
 		[strm position < endPos] whileTrue: [rawStr nextPut: strm next].
-		strings at: index put: rawStr contents	].
+		strings at: index put: (String fromUtf8: rawStr contents asByteArray	)].
 	^strings.! !
 
 !MOFile class methodsFor: 'class initialization'!
@@ -847,10 +850,10 @@ domainUnregistered: aDomainName
 	moFiles removeKey: aDomainName ifAbsent: [^self]
 	! !
 
-!GetTextTranslator methodsFor: 'accessing' stamp: 'hlsf 3/9/2022 16:32:20'!
+!GetTextTranslator methodsFor: 'accessing' stamp: 'hlsf 3/11/2022 10:17:14'!
 loadMOFiles
 	TextDomainManager allKnownDomains 
-		do: [:domainName | self halt.
+		do: [:domainName | 
 			self moFileForDomain: domainName
 		].! !
 
