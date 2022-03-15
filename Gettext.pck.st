@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 11 March 2022 at 10:33:16 am'!
+'From Cuis 6.0 [latest update: #5091] on 14 March 2022 at 9:57:42 pm'!
 'Description '!
-!provides: 'Gettext' 1 17!
+!provides: 'Gettext' 1 18!
 !requires: 'System-Locales' 1 4 nil!
 SystemOrganization addCategory: 'Gettext'!
 
@@ -13,16 +13,6 @@ Object subclass: #GetTextExporter
 	category: 'Gettext'!
 !classDefinition: 'GetTextExporter class' category: 'Gettext'!
 GetTextExporter class
-	instanceVariableNames: ''!
-
-!classDefinition: #LocaleID category: 'Gettext'!
-Object subclass: #LocaleID
-	instanceVariableNames: 'isoLanguage isoCountry'
-	classVariableNames: ''
-	poolDictionaries: 'nil'
-	category: 'Gettext'!
-!classDefinition: 'LocaleID class' category: 'Gettext'!
-LocaleID class
 	instanceVariableNames: ''!
 
 !classDefinition: #MOFile category: 'Gettext'!
@@ -103,9 +93,6 @@ TextDomainManager registerClassCategory: 'Morphic-Books' domain: 'Book'.
 "Remove a class category"
 TextDomainManager unregisterClassCategory: 'Morphic-Books'.!
 
-!LocaleID commentStamp: '' prior: 0!
-The ID for localization!
-
 !MOFile commentStamp: '' prior: 0!
 Wrapper for MO file of gettext.
 Known limitation:  
@@ -167,22 +154,6 @@ I am a utility class of Gettext. Most uses are internal to Gettext.
 You can use me to browse all methods sending translation messages to non-string receivers:
 
 	TranslatedReceiverFinder browseNonLiteralReceivers!
-
-!LocaleID methodsFor: 'printing'!
-printOn: stream
-	"<language>-<country>"
-	stream nextPutAll: self isoLanguage.
-	self isoCountry
-		ifNotNil: [stream nextPut: $-; nextPutAll: self isoCountry]! !
-
-!LocaleID methodsFor: 'printing'!
-storeOn: aStream 
-	aStream nextPut: $(.
-	aStream nextPutAll: self class name.
-	aStream nextPutAll: ' isoString: '.
-	aStream nextPutAll: '''' , self printString , ''''.
-	aStream nextPut: $).
-! !
 
 !NaturalLanguageTranslator class methodsFor: 'class initialization'!
 startUp: resuming 
@@ -489,107 +460,6 @@ defaultSelectors
 		#translated 
 		#translatedNoop
 		)! !
-
-!LocaleID methodsFor: 'printing'!
-posixName
-	"(LocaleID isoString: 'es-MX') posixName"
-	"(LocaleID isoString: 'es') posixName"
-	"language[_territory]"
-	^ self isoCountry
-		ifNil: [self isoLanguage]
-		ifNotNil: [self isoLanguage , '_' , self isoCountry]! !
-
-!LocaleID methodsFor: 'comparing'!
-= anotherObject
-	self class == anotherObject class
-		ifFalse: [^false].
-	^self isoLanguage = anotherObject isoLanguage
-		and: [self isoCountry = anotherObject isoCountry]! !
-
-!LocaleID methodsFor: 'comparing'!
-hash
-	^self isoLanguage hash bitXor: self isoCountry hash! !
-
-!LocaleID methodsFor: 'testing'!
-hasParent
-	^self isoCountry notNil! !
-
-!LocaleID methodsFor: 'initialize'!
-isoLanguage: langString isoCountry: countryStringOrNil
-	isoLanguage _ langString.
-	isoCountry _ countryStringOrNil! !
-
-!LocaleID methodsFor: 'accessing'!
-displayCountry
-	^(ISOLanguageDefinition iso2Countries at: self isoCountry asUppercase ifAbsent: [ self isoCountry ]) ! !
-
-!LocaleID methodsFor: 'accessing'!
-displayLanguage
-	| language |
-	language _ (ISOLanguageDefinition iso2LanguageTable
-				at: self isoLanguage
-				ifAbsent: [^ self isoLanguage]) language.
-	^ self isoCountry
-		ifNil: [language]
-		ifNotNil: [language , ' (' , self displayCountry , ')']! !
-
-!LocaleID methodsFor: 'accessing'!
-isoCountry
-	^isoCountry! !
-
-!LocaleID methodsFor: 'accessing'!
-isoLanguage
-	^isoLanguage! !
-
-!LocaleID methodsFor: 'accessing'!
-isoString
-	^self asString! !
-
-!LocaleID methodsFor: 'accessing'!
-parent
-	^self class isoLanguage: self isoLanguage! !
-
-!LocaleID methodsFor: 'accessing'!
-translator
-	^ NaturalLanguageTranslator localeID: self ! !
-
-!LocaleID class methodsFor: 'accessing'!
-current
-	^Locale current localeID! !
-
-!LocaleID class methodsFor: 'accessing'!
-previous
-	^Locale previous localeID! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoLanguage: langString
-	^self isoLanguage: langString isoCountry: nil! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoLanguage: langString isoCountry: countryStringOrNil
-	^self new isoLanguage: langString isoCountry: countryStringOrNil! !
-
-!LocaleID class methodsFor: 'instance creation'!
-isoString: isoString
-	"Parse the isoString (<language>-<country>) into its components and return the matching LocaleID"
-	"LocaleID isoString: 'en' "
-	"LocaleID isoString: 'en-us' "
-
-	| parts language country |
-	parts _ isoString findTokens: #($- ).
-	language _ parts first.
-	parts size > 1
-		ifTrue: [country _ parts second].
-	^self isoLanguage: language isoCountry: country! !
-
-!LocaleID class methodsFor: 'instance creation'!
-posixName: aString 
-	^ self
-		isoString: (aString copyReplaceAll: '_' with: '-')! !
-
-!LocaleID class methodsFor: 'accessing-defaults'!
-default
-	^ self isoLanguage: 'en'! !
 
 !MOFile methodsFor: 'experimental'!
 hashPjw: aString

@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 9 March 2022 at 10:03:02 pm'!
+'From Cuis 6.0 [latest update: #5091] on 14 March 2022 at 10:05:01 pm'!
 'Description '!
-!provides: 'System-Locales' 1 4!
+!provides: 'System-Locales' 1 6!
 SystemOrganization addCategory: 'System-Locales'!
 
 
@@ -24,6 +24,16 @@ Object subclass: #Locale
 Locale class
 	instanceVariableNames: ''!
 
+!classDefinition: #LocaleID category: 'System-Locales'!
+Object subclass: #LocaleID
+	instanceVariableNames: 'isoLanguage isoCountry'
+	classVariableNames: ''
+	poolDictionaries: 'nil'
+	category: 'System-Locales'!
+!classDefinition: 'LocaleID class' category: 'System-Locales'!
+LocaleID class
+	instanceVariableNames: ''!
+
 
 !ISOLanguageDefinition commentStamp: '' prior: 0!
 The language definitions from International Organization for Standardization.
@@ -45,6 +55,9 @@ http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.10
 ISO 3166
 http://mitglied.lycos.de/buran/knowhow/codes/locales/!
 
+!LocaleID commentStamp: '' prior: 0!
+The ID for localization!
+
 !Locale class methodsFor: 'system startup' stamp: 'hlsf 2/20/2022 10:09:26'!
 startUp: resuming
 	resuming ifFalse: [^self].
@@ -59,6 +72,22 @@ startUp: resuming
 printOn: aStream 
 	super printOn: aStream.
 	aStream nextPutAll:  '(' ; print: id ; nextPutAll:  ')'! !
+
+!LocaleID methodsFor: 'printing'!
+printOn: stream
+	"<language>-<country>"
+	stream nextPutAll: self isoLanguage.
+	self isoCountry
+		ifNotNil: [stream nextPut: $-; nextPutAll: self isoCountry]! !
+
+!LocaleID methodsFor: 'printing'!
+storeOn: aStream 
+	aStream nextPut: $(.
+	aStream nextPutAll: self class name.
+	aStream nextPutAll: ' isoString: '.
+	aStream nextPutAll: '''' , self printString , ''''.
+	aStream nextPut: $).
+! !
 
 !ISOLanguageDefinition methodsFor: 'accessing'!
 iso2
@@ -2894,5 +2923,102 @@ localeChangedGently
 !Locale class methodsFor: 'notification' stamp: 'hlsf 2/20/2022 09:55:30'!
 localeChangedListeners
 	^LocaleChangeListeners ifNil: [LocaleChangeListeners := OrderedCollection new]! !
+
+!LocaleID methodsFor: 'printing'!
+posixName
+	"(LocaleID isoString: 'es-MX') posixName"
+	"(LocaleID isoString: 'es') posixName"
+	"language[_territory]"
+	^ self isoCountry
+		ifNil: [self isoLanguage]
+		ifNotNil: [self isoLanguage , '_' , self isoCountry]! !
+
+!LocaleID methodsFor: 'comparing'!
+= anotherObject
+	self class == anotherObject class
+		ifFalse: [^false].
+	^self isoLanguage = anotherObject isoLanguage
+		and: [self isoCountry = anotherObject isoCountry]! !
+
+!LocaleID methodsFor: 'comparing'!
+hash
+	^self isoLanguage hash bitXor: self isoCountry hash! !
+
+!LocaleID methodsFor: 'testing'!
+hasParent
+	^self isoCountry notNil! !
+
+!LocaleID methodsFor: 'initialize'!
+isoLanguage: langString isoCountry: countryStringOrNil
+	isoLanguage _ langString.
+	isoCountry _ countryStringOrNil! !
+
+!LocaleID methodsFor: 'accessing'!
+displayCountry
+	^(ISOLanguageDefinition iso2Countries at: self isoCountry asUppercase ifAbsent: [ self isoCountry ]) ! !
+
+!LocaleID methodsFor: 'accessing'!
+displayLanguage
+	| language |
+	language _ (ISOLanguageDefinition iso2LanguageTable
+				at: self isoLanguage
+				ifAbsent: [^ self isoLanguage]) language.
+	^ self isoCountry
+		ifNil: [language]
+		ifNotNil: [language , ' (' , self displayCountry , ')']! !
+
+!LocaleID methodsFor: 'accessing'!
+isoCountry
+	^isoCountry! !
+
+!LocaleID methodsFor: 'accessing'!
+isoLanguage
+	^isoLanguage! !
+
+!LocaleID methodsFor: 'accessing'!
+isoString
+	^self asString! !
+
+!LocaleID methodsFor: 'accessing'!
+parent
+	^self class isoLanguage: self isoLanguage! !
+
+!LocaleID methodsFor: 'accessing'!
+translator
+	^ NaturalLanguageTranslator localeID: self ! !
+
+!LocaleID class methodsFor: 'accessing'!
+current
+	^Locale current localeID! !
+
+!LocaleID class methodsFor: 'instance creation'!
+isoLanguage: langString
+	^self isoLanguage: langString isoCountry: nil! !
+
+!LocaleID class methodsFor: 'instance creation'!
+isoLanguage: langString isoCountry: countryStringOrNil
+	^self new isoLanguage: langString isoCountry: countryStringOrNil! !
+
+!LocaleID class methodsFor: 'instance creation'!
+isoString: isoString
+	"Parse the isoString (<language>-<country>) into its components and return the matching LocaleID"
+	"LocaleID isoString: 'en' "
+	"LocaleID isoString: 'en-us' "
+
+	| parts language country |
+	parts _ isoString findTokens: #($- ).
+	language _ parts first.
+	parts size > 1
+		ifTrue: [country _ parts second].
+	^self isoLanguage: language isoCountry: country! !
+
+!LocaleID class methodsFor: 'instance creation'!
+posixName: aString 
+	^ self
+		isoString: (aString copyReplaceAll: '_' with: '-')! !
+
+!LocaleID class methodsFor: 'accessing-defaults'!
+default
+	^ self isoLanguage: 'en'! !
 ISOLanguageDefinition initialize!
 Locale initialize!
