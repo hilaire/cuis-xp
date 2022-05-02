@@ -1,4 +1,4 @@
-'From Cuis 6.0 [latest update: #5113] on 1 May 2022 at 6:59:38 pm'!
+'From Cuis 6.0 [latest update: #5113] on 2 May 2022 at 10:23:17 pm'!
 !classDefinition: #PreferenceNG category: #'System-Support'!
 Object subclass: #PreferenceNG
 	instanceVariableNames: 'name description category value type'
@@ -43,9 +43,17 @@ name: nameSymbol description: aString category: categorySymbol type: aType value
 category
 	^ category ! !
 
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/2/2022 22:19:11'!
+category: aSymbol
+	aSymbol isNil ifFalse: [category _ aSymbol ]! !
+
 !PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:25:57'!
 description
 	^ description! !
+
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/2/2022 22:18:30'!
+description: aString
+	aString isEmptyOrNil ifFalse: [description _ aString ]! !
 
 !PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:26:02'!
 name
@@ -114,19 +122,26 @@ import
 			value: oldPref preferenceValue 
 		]! !
 
-!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 4/30/2022 12:17:04'!
+!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 5/2/2022 22:21:52'!
 name: nameSymbol description: aString category: categorySymbol type: aType value: aValue
+"If I exist, I am updated with the newer sent data "
 	(nameSymbol isSymbol or: [categorySymbol isSymbol]) ifFalse: 
 		[self error: 'Preference Name & Category are not valid symbol.'].
 	^ ThePreferences 
 		at: nameSymbol
-		ifAbsentPut: [ 
+		ifPresent: [:thePref |
+			thePref 
+				description: aString;
+				category: categorySymbol;
+				value: aValue;
+				yourself]
+		ifAbsent: [ 
 			self new ::
 				name: nameSymbol 
 				description: aString 
 				category: categorySymbol 
 				type: aType 
-				value: aValue].
+				value: aValue ].
 	! !
 
 
@@ -188,34 +203,56 @@ detectType: anObject
 ! !
 
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:25:53'!
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 19:55:30'!
 cuisDefaults
 	^ #( 
-		#(#drawKeyboardFocusIndicator true )
-		#(#balloonHelpEnabled true )
-		#(#biggerCursors false )
-		#(#browseWithPrettyPrint false )
-		#(#caseSensitiveFinds false )
-		#(#checkForSlips true )
-		#(#cmdDotEnabled true )
-		#(#diffsInChangeList true )
-		#(#diffsWithPrettyPrint false )
-		#(#menuKeyboardControl true )
-		#(#optionalButtons true )
-		#(#extraDebuggerButtons true )
-		#(#subPixelRenderFonts true )
-		#(#thoroughSenders true )
-		#(#cheapWindowReframe false )
-		#(#syntaxHighlightingAsYouType true )
-		#(#tapAndHoldEmulatesButton2 true )
-		#(#clickGrabsMorphs false )
-		#(#syntaxHighlightingAsYouTypeAnsiAssignment false )
-		#(#syntaxHighlightingAsYouTypeLeftArrowAssignment false )
-		#(#wantsMenuIcons true )
-		#(#classAnnotations #(instanceMethodsCount classMethodsCount linesOfCode))
-		#(#methodAnnotations #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets))
-		#(#systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount linesOfCode))
+		#(#drawKeyboardFocusIndicator #gui true )
+		#(#balloonHelpEnabled #gui true )
+		#(#biggerCursors #gui false )
+		#(#browseWithPrettyPrint #programming false )
+		#(#caseSensitiveFinds #system false )
+		#(#checkForSlips #system true )
+		#(#cmdDotEnabled #system true )
+		#(#diffsInChangeList #programming true )
+		#(#diffsWithPrettyPrint #programming false )
+		#(#menuKeyboardControl #gui true )
+		#(#optionalButtons #gui true )
+		#(#extraDebuggerButtons #programming true )
+		#(#subPixelRenderFonts #gui true )
+		#(#thoroughSenders #programming true )
+		#(#cheapWindowReframe #gui false )
+		#(#syntaxHighlightingAsYouType #programming true )
+		#(#tapAndHoldEmulatesButton2 #gui true )
+		#(#clickGrabsMorphs #gui false )
+		#(#syntaxHighlightingAsYouTypeAnsiAssignment #programming false )
+		#(#syntaxHighlightingAsYouTypeLeftArrowAssignment #programming false )
+		#(#wantsMenuIcons #gui true )
+		#(#classAnnotations #programming #(instanceMethodsCount classMethodsCount linesOfCode))
+		#(#methodAnnotations #programming #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets))
+		#(#systemCategoryAnnotations #programming #(classCount instanceMethodsCount classMethodsCount linesOfCode))
 	)! !
+
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:10:54'!
+defaultFontPreferences! !
+
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:11:47'!
+defaultHaloPreferencesWith: anArray
+	| aColor |
+	^ PreferenceNG 
+		name: #haloSpecifications 
+		description: 'Halo specifications describing which halos are to be used, what they should look like, and where they should be situated'
+		category: #gui
+		type: Array
+		value: (anArray collect: [ :each |
+			aColor _ Color.
+			each fourth do: [ :sel | aColor _ aColor perform: sel].
+			HaloSpec new 
+				horizontalPlacement: each second
+				verticalPlacement: each third 
+				color: aColor
+				iconSymbol: each fifth
+				addHandleSelector: each first
+				hoverHelp: each sixth])! !
 
 !PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:48:26'!
 iconicHaloSpecifications
@@ -243,36 +280,17 @@ that may be used in the iconic halo scheme"
 	"
 )! !
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:53:34'!
-installHaloSpecsFromArray: anArray
-	| aColor |
-	^ PreferenceNG 
-		name: #haloSpecifications 
-		description: 'Halo specifications describing which halos are to be used, what they should look like, and where they should be situated'
-		category: #system
-		type: Array
-		value: (anArray collect: [ :each |
-			aColor _ Color.
-			each fourth do: [ :sel | aColor _ aColor perform: sel].
-			HaloSpec new 
-				horizontalPlacement: each second
-				verticalPlacement: each third 
-				color: aColor
-				iconSymbol: each fifth
-				addHandleSelector: each first
-				hoverHelp: each sixth])! !
-
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:54:26'!
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:11:47'!
 reset
 	ThePreferences _ Dictionary new.
 	self cuisDefaults do: [:anArray |
 		self 
 			name: anArray first 
 			description: '' 
-			category: #system 
-			type: (self detectType: anArray second)
-			value: anArray second].
-	self installHaloSpecsFromArray: self iconicHaloSpecifications 
+			category: anArray second 
+			type: (self detectType: anArray third)
+			value: anArray third].
+	self defaultHaloPreferencesWith: self iconicHaloSpecifications.
 		! !
 
 
