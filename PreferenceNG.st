@@ -1,4 +1,4 @@
-'From Cuis 6.0 [latest update: #5113] on 2 May 2022 at 10:23:17 pm'!
+'From Cuis 6.0 [latest update: #5113] on 3 May 2022 at 9:26:09 pm'!
 !classDefinition: #PreferenceNG category: #'System-Support'!
 Object subclass: #PreferenceNG
 	instanceVariableNames: 'name description category value type'
@@ -30,12 +30,12 @@ printOn: aStream
 		nextPut: $)! !
 
 
-!PreferenceNG methodsFor: 'initialization' stamp: 'hlsf 4/30/2022 12:11:31'!
+!PreferenceNG methodsFor: 'initialization' stamp: 'hlsf 5/3/2022 20:42:49'!
 name: nameSymbol description: aString category: categorySymbol type: aType value: aValue
 	name _ nameSymbol.
 	description _ aString.
 	category _ categorySymbol.
-	type _ aType.
+	type _ aType ifNotNil: [aType] ifNil: [ aValue class].
 	value _ 	aValue! !
 
 
@@ -59,18 +59,24 @@ description: aString
 name
 	^ name! !
 
-!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:25:38'!
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/3/2022 21:16:04'!
 value
-	^ value! !
+" If my type is closure without argument, return my value "
+	^ (type == BlockClosure and: [value argumentCount = 0])
+		ifTrue: [value value]
+		ifFalse: [value]
+	! !
 
-!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 21:29:27'!
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/3/2022 20:54:17'!
 value: aValue	
 	type class class == Metaclass "type is a Class"
 		ifTrue: [
 			(aValue isKindOf: type) ifFalse: [self error: aValue printString, ' is not a ', type printString].
-			value _ aValue ]
-		ifFalse: [ "Should be handled somehow by the preference editor " 			].
-	self class triggerEvent: #preferenceChanged with: self! !
+			value _ aValue .				
+			]
+		ifFalse: [ "Should be handled somehow by the preference editor "
+			value _ aValue].
+	self triggerEvent: #preferenceChanged with: self! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -87,10 +93,10 @@ all
 at: symbolName
 	^ (self instanceAt: symbolName) value! !
 
-!PreferenceNG class methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 22:22:29'!
+!PreferenceNG class methodsFor: 'accessing' stamp: 'hlsf 5/3/2022 20:47:15'!
 at: symbolName put: aValue
 	| myPref |
-	myPref _ self instanceAt: symbolName.
+	myPref _ self instanceAt: symbolName. 
 	myPref value: aValue! !
 
 !PreferenceNG class methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:28:57'!
@@ -122,7 +128,12 @@ import
 			value: oldPref preferenceValue 
 		]! !
 
-!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 5/2/2022 22:21:52'!
+!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 5/3/2022 19:16:59'!
+name: nameSymbol category: categorySymbol value: aValue
+	self name: nameSymbol description: nil category: categorySymbol type: nil value: aValue 
+! !
+
+!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 5/3/2022 19:59:49'!
 name: nameSymbol description: aString category: categorySymbol type: aType value: aValue
 "If I exist, I am updated with the newer sent data "
 	(nameSymbol isSymbol or: [categorySymbol isSymbol]) ifFalse: 
@@ -135,13 +146,14 @@ name: nameSymbol description: aString category: categorySymbol type: aType value
 				category: categorySymbol;
 				value: aValue;
 				yourself]
-		ifAbsent: [ 
-			self new ::
+		ifAbsent: [ | newPref |
+			newPref _ self new ::
 				name: nameSymbol 
 				description: aString 
 				category: categorySymbol 
 				type: aType 
-				value: aValue ].
+				value: aValue.
+			ThePreferences at: nameSymbol put: newPref ].
 	! !
 
 
@@ -203,9 +215,70 @@ detectType: anObject
 ! !
 
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 19:55:30'!
+!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 20:54:30'!
+defaultFontSize: guiElementSizePref
+	| font titleFont pointSize |
+	pointSize _ self fontSizes at: guiElementSizePref value.
+	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize.
+	PreferenceNG name: #standardListFont category: #font value: font.
+	PreferenceNG name: #standardMenuFont category: #font value: font.
+	PreferenceNG name: #standardCodeFont category: #font value: font.
+	PreferenceNG name: #standardButtonFont category: #font value: font.
+	FontFamily defaultFamilyName: font familyName defaultPointSize: pointSize.	
+	titleFont _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize * 12//10.
+	PreferenceNG name: #windowTitleFont category: #font value: titleFont.
+	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
+	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].
+	PreferenceNG at: #biggerCursors put: (pointSize > 14).
+	Cursor defaultCursor activateCursor.
+	^font! !
+
+!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 18:58:38'!
+fontSizes
+	^ `{
+		#tinyFonts -> 7 .
+		#verySmallFonts -> 9 .
+		#smallFonts ->11 .
+		#standardFonts -> 14 .
+		#largeFonts -> 18 .
+		#veryLargeFonts -> 24 .
+		#hugeFonts -> 32} asDictionary`
+		! !
+
+!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 19:38:13'!
+setDefaultFont: aFontName
+	"Change the font on the whole system without changing point sizes."
+	FontFamily defaultFamilyName: aFontName.
+	Preferences
+			setDefaultFont: FontFamily defaultFamilyName
+			spec: {
+				{#standardListFont. (PreferenceNG at: #standardListFont) pointSize.}.
+				{#standardMenuFont. (PreferenceNG at: #standardMenuFont) pointSize.}.
+				{#windowTitleFont. (PreferenceNG at: #windowTitleFont) pointSize.}.
+				{#standardCodeFont. (PreferenceNG at: #standardCodeFont) pointSize.}.
+				{#standardButtonFont. (PreferenceNG at: #standardButtonFont) pointSize.}.
+			}.
+	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
+	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].! !
+
+!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 19:39:30'!
+setDefaultFont: fontFamilyName spec: defaultFontsSpec
+	| font |
+	defaultFontsSpec do: [ :triplet |
+		font _ FontFamily familyName: fontFamilyName pointSize: triplet second.
+		font ifNil: [ font _ FontFamily defaultFamilyAndPointSize ]. 
+		triplet size > 2 ifTrue: [			font _ font emphasized: triplet third ].
+		PreferenceNG at: triplet first put: font ].
+	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
+	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].! !
+
+
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 19:50:36'!
 cuisDefaults
-	^ #( 
+	^ #( #(#cacheTrueTypeGlyphs #font true )
+		#(#loadOnlyLatinGlyphData #font true )
+		#(#properDisplayAlphaForFonts #font false )	
+		#(#subPixelRenderColorFonts #font true )
 		#(#drawKeyboardFocusIndicator #gui true )
 		#(#balloonHelpEnabled #gui true )
 		#(#biggerCursors #gui false )
@@ -232,8 +305,18 @@ cuisDefaults
 		#(#systemCategoryAnnotations #programming #(classCount instanceMethodsCount classMethodsCount linesOfCode))
 	)! !
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:10:54'!
-defaultFontPreferences! !
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 19:54:51'!
+defaultFontPreferences
+	| myPref |
+	myPref _ PreferenceNG 
+		name: #guiElementsSize 
+		description: 'Size of the graphic intereface element' 
+		category: #gui 
+		type: #(tinyFonts verySmallFonts smallFonts standardFonts largeFonts veryLargeFonts hugeFonts)
+		value: #standardFonts.
+	myPref when: #preferenceChanged send: #defaultFontSize: to: PreferenceNG.
+	"Trigger manually, the preference was instantiated with value, so no setter message sent"
+	myPref triggerEvent: #preferenceChanged with: myPref. ! !
 
 !PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:11:47'!
 defaultHaloPreferencesWith: anArray
@@ -253,6 +336,20 @@ defaultHaloPreferencesWith: anArray
 				iconSymbol: each fifth
 				addHandleSelector: each first
 				hoverHelp: each sixth])! !
+
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 21:23:24'!
+defaultMiscPreferences
+	PreferenceNG 
+		name: #haloHandleSize description: 'Size of the halo handle' category: #gui 
+		type: nil value: [(PreferenceNG at: #standardListFont) pointSize * 5 // 3 max: 16].
+	PreferenceNG
+		name: #roundedButtonsRadius description: 'Radius of the button corner, when rounded' 	category: #gui
+		type: nil value: [(PreferenceNG at: #standardListFont) pointSize * 8 // 14].
+	PreferenceNG
+		name: #roundedWindowRadius description: 'Radius of the window corner, when rounded' 	category: #gui
+		type: nil value: [(PreferenceNG at: #standardListFont) pointSize].
+	PreferenceNG
+		name: #scrollbarThickness category: #gui 		value: [(PreferenceNG at: #windowTitleFont) pointSize + 2]! !
 
 !PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:48:26'!
 iconicHaloSpecifications
@@ -280,7 +377,7 @@ that may be used in the iconic halo scheme"
 	"
 )! !
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:11:47'!
+!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 21:24:41'!
 reset
 	ThePreferences _ Dictionary new.
 	self cuisDefaults do: [:anArray |
@@ -291,6 +388,8 @@ reset
 			type: (self detectType: anArray third)
 			value: anArray third].
 	self defaultHaloPreferencesWith: self iconicHaloSpecifications.
+	self defaultFontPreferences.
+	self defaultMiscPreferences 
 		! !
 
 
