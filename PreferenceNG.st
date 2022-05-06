@@ -1,11 +1,11 @@
-'From Cuis 6.0 [latest update: #5113] on 3 May 2022 at 9:26:09 pm'!
+'From Cuis 6.0 [latest update: #5113] on 7 May 2022 at 1:13:36 am'!
 !classDefinition: #PreferenceNG category: #'System-Support'!
 Object subclass: #PreferenceNG
 	instanceVariableNames: 'name description category value type'
 	classVariableNames: 'ThePreferences'
 	poolDictionaries: ''
 	category: 'System-Support'!
-!PreferenceNG commentStamp: 'hlsf 4/30/2022 12:47:46' prior: 0!
+!PreferenceNG commentStamp: '<historical>' prior: 0!
 My instance is a Preference whose value is of a given class (type), or follow the description of the type instance
 
 - name, category: symbol
@@ -14,15 +14,20 @@ My instance is a Preference whose value is of a given class (type), or follow th
 - value: an object whose class match type or the instance description of the type
 
 Modus Operendi
-- To create a Preference, invoke the instance creation class method (Preference name:description:category:type:value:). The new preference is automatically remembered. If a preference with same name already exist, its instance is returned.
-- To access, invoke as dictionary (Preference at: #biggerCursors), a short cut exist (Preference biggerCursors)!
+- To create a Preference, invoke the instance creation class method (Preference name:description:category:type:value:). The new preference is automatically remembered. If a preference with same name already exist, its instance is updated with the new provided data and its instance returned.
+- To access, invoke as dictionary (Preference at: #biggerCursors), a short cut exist (Preference biggerCursors)
+- When a preference value is changed with its #value message, an event #preferenceChanged is triggered.
+- Tools can listen to a specific #preferenceChanged event: 
+	(Preference instanceAt: #guiElementSize) when: #preferenceChanged send: #shakeScreen: to: myTool
+By default the Preference class listen to a few event to adjust the behavior of the image to some preference changes.	
+!
 
 
-!PreferenceNG methodsFor: 'printing' stamp: 'hlsf 4/30/2022 14:42:44'!
+!PreferenceNG methodsFor: 'printing' stamp: 'hlsf 5/5/2022 12:31:23'!
 printOn: aStream
 	aStream nextPutAll: self class name ;
-		nextPutAll: ' (';
-		nextPutAll: name capitalized ;
+		nextPutAll: ' (#';
+		nextPutAll: name ;
 		nextPutAll: ' = ';
 		nextPutAll: type printString;
 		nextPutAll: '::';
@@ -30,12 +35,12 @@ printOn: aStream
 		nextPut: $)! !
 
 
-!PreferenceNG methodsFor: 'initialization' stamp: 'hlsf 5/3/2022 20:42:49'!
+!PreferenceNG methodsFor: 'initialization' stamp: 'hlsf 5/5/2022 12:21:27'!
 name: nameSymbol description: aString category: categorySymbol type: aType value: aValue
 	name _ nameSymbol.
 	description _ aString.
 	category _ categorySymbol.
-	type _ aType ifNotNil: [aType] ifNil: [ aValue class].
+	type _ aType ifNotNil: [aType] ifNil: [self class detectType: aValue ].
 	value _ 	aValue! !
 
 
@@ -58,6 +63,10 @@ description: aString
 !PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:26:02'!
 name
 	^ name! !
+
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/4/2022 23:32:57'!
+type
+	^ type! !
 
 !PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/3/2022 21:16:04'!
 value
@@ -116,18 +125,6 @@ select: aCategory
 	^ ThePreferences values select: [:aPreference | aPreference category == aCategory ]! !
 
 
-!PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 4/30/2022 14:39:32'!
-import
-"Import the preferences from the old system"
-	Preferences preferencesDictionary valuesDo: [:oldPref |
-		PreferenceNG 
-			name: oldPref name 
-			description: (oldPref instVarNamed: #helpString)
-			category: (oldPref instVarNamed: #categoryList) first
-			type: Object
-			value: oldPref preferenceValue 
-		]! !
-
 !PreferenceNG class methodsFor: 'instance creation' stamp: 'hlsf 5/3/2022 19:16:59'!
 name: nameSymbol category: categorySymbol value: aValue
 	self name: nameSymbol description: nil category: categorySymbol type: nil value: aValue 
@@ -163,23 +160,192 @@ doesNotUnderstand: aMessage
 	^ self at: aMessage selector! !
 
 
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 4/30/2022 21:07:47'!
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 22:50:44'!
+cuisDefaultsFont
+	^ #( 
+		#(aaFontsColormapDepth 4)
+		#(cacheTrueTypeGlyphs true )
+		#(guiElementsSize standardFonts #(tinyFonts verySmallFonts smallFonts standardFonts largeFonts veryLargeFonts hugeFonts) #defaultFontSize: )
+		#(loadOnlyLatinGlyphData true )
+		#(properDisplayAlphaForFonts false )	
+		#(subPixelRenderColorFonts true )
+	)! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/4/2022 20:22:05'!
+cuisDefaultsGui
+	^ #( 
+		#(balloonHelpEnabled true )
+		#(biggerCursors false )		
+		#(cacheDisplayContentWhenMovingMorphs true )
+		#(cheapWindowReframe false )		
+		#(clickGrabsMorphs false )	
+		#(ctrlArrowsScrollHorizontally false ) 
+		#(drawKeyboardFocusIndicator true )
+		#(focusFollowsMouse true )
+		#(focusIndicatorWidth 1)
+		#(fullScreenLeavesDeskMargins true )
+		#(haloEnclosesFullBounds true )
+		#(halosShowCoordinateSystem true )
+		#(menuKeyboardControl true )
+		#(optionalButtons true )		
+		#(selectiveHalos true )
+		#(subPixelRenderFonts true )	
+		#(tapAndHoldEmulatesButton2 true )
+		#(tileResizerInWindowMenu true )
+		#(wantsMenuIcons true )
+	)! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 23:10:14'!
+cuisDefaultsProgramming
+	^ #(
+		#(allowBlockArgumentAssignment false )
+		#(alternativeBrowseIt false )
+		#(assignmentGlyphSelector useLeftArrow #(useLeftArrow useAlwaysLeftArrow) assignmentGlyph: )
+		#(backgroundColorFillsAllBackground true )
+		#(browseWithPrettyPrint false )
+		#(classAnnotations #(instanceMethodsCount classMethodsCount linesOfCode) )
+		#(debugHaloHandle true )
+		#(debugLogTimestamp true )
+		#(debugShowDamage false )
+		#(decorateBrowserButtons true )
+		#(diffsInChangeList true )
+		#(diffsWithPrettyPrint false )
+		#(extraDebuggerButtons true )
+		#(fullPrintItInWorkspaces false )
+		#(highlightBlockNesting true )
+		#(italicsInShout true)
+		#(leftArrowAssignmentsInGeneratedCode false )
+		#(listClassesHierarchically true )
+		#(logDebuggerStackToFile false )
+		#(methodAnnotations #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets) )	
+		#(prettyPrintRectangularBlocks false )
+		#(shiftClickShowsImplementors false )
+		#(shoutInWorkspaces true )
+		#(showAnnotations true )
+		#(showLinesInHierarchyViews true )
+		#(stylingWithEmphasisInWorkspaces false )
+		#(systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount linesOfCode) )
+		#(syntaxHighlightingAsYouType true )
+		#(syntaxHighlightingAsYouTypeAnsiAssignment false )
+		#(syntaxHighlightingAsYouTypeLeftArrowAssignment false )
+		#(thoroughSenders true )
+	)! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 19:43:42'!
+cuisDefaultsSystem
+	^ #( #(allowNonLocalReturnsInExceptionHandlers true )
+		#(askConfirmationOnQuit true )
+		#(askToInstallComplexPackage true )
+		#(automaticPlatformSettings true )
+		#(autoNumberUserChanges false )
+		#(caseSensitiveFinds false )
+		#(changeSetVersionNumbers true )
+		#(checkForSlips true )
+		#(checkLostChangesOnStartUp false )
+		#(cmdDotEnabled true )
+		#(cmdDotInterruptTakesStatistics false )
+		#(dismissAllOnOptionClose false )
+		#(initialFileListDirectories #roots )
+		#(machine default #(default slow smalltalk80) )
+		#(pointer finger #(finger mouse))
+		#(selectionsMayShrink true )
+		#(serverMode false )
+		#(systemWindowEmbedOK false )
+		#(transcriptLogVerbose true )
+		#(userChangeFileNameExtension '.user.changes' )
+		#(warnAboutNonLocalReturnsInExceptionHandlers false )
+		#(warnIfNoChangesFile true )
+		#(warnIfNoSourcesFile true )
+	)! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 23:07:40'!
+iconicHaloSpecifications
+"Answer an array that characterizes the locations, colors, icons, and selectors of the halo handles 
+that may be used in the iconic halo scheme"
+
+^ #(	"selector					horiz			vert			color info				icon key"
+(addDismissHandle:						left			top			(red)				haloDismissIcon 					'Remove')
+(addMenuHandle:						leftCenter			top			(blue lighter)				haloMenuIcon 					'Menu')
+(addGrabHandle:						center			top			(black)				haloGrabIcon 					'Pick up')
+(addDragHandle:						rightCenter			top			(brown)				haloDragIcon 					'Move')
+(addDupHandle:						right			top			(green)				haloDuplicateIcon     					'Duplicate')	
+(addExploreHandle:						left			topCenter			(orange)				haloDebugIcon 					'Explore')
+(addDebugHandle:						right			topCenter			(orange)				haloDebugIcon 					'Debug')
+(addCollapseHandle:						left			center			(tan)				haloCollapseIcon 					'Collapse')
+(addScaleHandle:						right			center			(blue)				haloScaleIcon 					'Change scale')
+(addRotateHandle:						left			bottom			(blue)				haloRotateIcon 					'Rotate')
+(addHelpHandle:						center			bottom			(lightBlue)				haloHelpIcon 					'Help')
+(addResizeHandle:						right			bottom			(yellow)				haloResizeIcon 					'Change size')
+	"FIXME - Currently non-functional...
+	(addRecolorHandle:						right			bottomCenter			(magenta darker)						haloColorIcon 						'Change color')	"
+)! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/7/2022 00:45:34'!
 initialize
-	self reset! !
+	ThePreferences _ Dictionary new.
+	#(gui font programming system) do: [: category | 
+		self installDefault: (self perform: (#cuisDefaults, category capitalized) asSymbol) in: category].
+	self installHaloPreferencesWith: self iconicHaloSpecifications.
+	self installMiscPreferences ! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/7/2022 00:47:32'!
+installDefault: anArray in: category
+" Description of preference in Array: name - value - type (optional) - event handler (optional) "
+	| myPref |
+	myPref _ PreferenceNG name: anArray first 				description: '' category: category 
+		type: (anArray at: 3 ifAbsent: [self detectType: anArray second]) value: anArray second.
+	anArray size = 4 ifTrue: [ "fourth record is an event listener hooked to Preference"
+		myPref when: #preferenceChanged send: anArray fourth to: PreferenceNG.
+		myPref triggerEvent: #preferenceChanged with: myPref]
+	! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/4/2022 16:10:52'!
+installHaloPreferencesWith: anArray
+	| aColor |
+	^ PreferenceNG 
+		name: #haloSpecifications 
+		description: 'Halo specifications describing which halos are to be used, what they should look like, and where they should be situated'
+		category: #gui
+		type: Array
+		value: (anArray collect: [ :each |
+			aColor _ Color.
+			each fourth do: [ :sel | aColor _ aColor perform: sel].
+			HaloSpec new 
+				horizontalPlacement: each second
+				verticalPlacement: each third 
+				color: aColor
+				iconSymbol: each fifth
+				addHandleSelector: each first
+				hoverHelp: each sixth])! !
+
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 23:09:17'!
+installMiscPreferences
+" Preference value defined with closure. We could insert in a dynamic array...
+  Preference with event handler "
+	PreferenceNG 
+		name: #haloHandleSize category: #gui 
+		value: [(PreferenceNG at: #standardListFont) pointSize * 5 // 3 max: 16].
+	PreferenceNG
+		name: #roundedButtonsRadius 	category: #gui 
+		value: [(PreferenceNG at: #standardListFont) pointSize * 8 // 14].
+	PreferenceNG
+		name: #roundedWindowRadius 	category: #gui value: [(PreferenceNG at: #standardListFont) pointSize].
+	PreferenceNG
+		name: #scrollbarThickness category: #gui 		value: [(PreferenceNG at: #windowTitleFont) pointSize + 2].
+	PreferenceNG name: #classFinder category: #programming value: [ BrowserWindow findClass ].
+	PreferenceNG name: #defaultAuthorName category: #programming value: [Utilities authorName].! !
 
 
-!PreferenceNG class methodsFor: 'fileIn/Out' stamp: 'hlsf 4/30/2022 22:10:43'!
+!PreferenceNG class methodsFor: 'fileIn/Out' stamp: 'hlsf 5/6/2022 11:42:57'!
 loadFrom: aFileEntry
-" Load all preferences from file, it replaces entirely the existing preferences "
-	ThePreferences _ SmartRefStream restoreFromFile: aFileEntry! !
-
-!PreferenceNG class methodsFor: 'fileIn/Out' stamp: 'hlsf 4/30/2022 22:10:56'!
-mergeWith: aFileEntry
-" Load the preferences from file and merge with the existing preferences. 
-Duplicates from file replace the ones in system "
-	| newPrefs |
-	newPrefs _ 	SmartRefStream restoreFromFile: aFileEntry.
-	newPrefs associationsDo: [:assoc | 		ThePreferences at: assoc key put: assoc value]! !
+" Load all preferences from file, update the existing preferences with the data from file "
+	(SmartRefStream restoreFromFile: aFileEntry) do: [:aPref | 
+		PreferenceNG 
+			name: aPref name 
+			description: aPref description 
+			category: aPref category 
+			type: aPref type 
+			value: (aPref instVarNamed: #value)	 " We want the raw value "]! !
 
 !PreferenceNG class methodsFor: 'fileIn/Out' stamp: 'hlsf 4/30/2022 22:20:56'!
 save: nameSymbol to: aFileEntry
@@ -204,8 +370,9 @@ saveCategory: categorySymbol to: aFileEntry
 		object: 	(myPref collect: [:aPref | aPref name -> aPref ]) asDictionary! !
 
 
-!PreferenceNG class methodsFor: 'helpers' stamp: 'hlsf 5/1/2022 18:34:41'!
+!PreferenceNG class methodsFor: 'helpers' stamp: 'hlsf 5/5/2022 12:21:56'!
 detectType: anObject
+"When the type is not provided, we can try to deduce it "
 	^ anObject class 
 		caseOf: {
 			[True] -> [Boolean].
@@ -215,8 +382,14 @@ detectType: anObject
 ! !
 
 
-!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 20:54:30'!
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:45'!
+assignmentGlyph: assignmentPref
+" #assignmentGliphSelector changed "
+	AbstractFont withAllSubclassesDo: [ :fontClass | fontClass assignmentGlyphSelectorPreferenceChanged ]! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:12'!
 defaultFontSize: guiElementSizePref
+" #guiElementSize changed "
 	| font titleFont pointSize |
 	pointSize _ self fontSizes at: guiElementSizePref value.
 	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize.
@@ -233,7 +406,95 @@ defaultFontSize: guiElementSizePref
 	Cursor defaultCursor activateCursor.
 	^font! !
 
-!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 18:58:38'!
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:06:35'!
+defaultMachine
+	^ #(
+		#(drawKeyboardFocusIndicator true )
+		#(balloonHelpEnabled true )
+		#(biggerCursors false )
+		#(browseWithPrettyPrint false )
+		#(caseSensitiveFinds false )
+		#(checkForSlips true )
+		#(cmdDotEnabled true )
+		#(diffsInChangeList true )
+		#(diffsWithPrettyPrint false )
+		#(menuKeyboardControl true )
+		#(optionalButtons true )
+		#(extraDebuggerButtons true )
+		#(subPixelRenderFonts true )
+		#(thoroughSenders true )
+		#(cheapWindowReframe false )
+		#(syntaxHighlightingAsYouType true )
+		#(tapAndHoldEmulatesButton2 true )
+		#(clickGrabsMorphs false )
+		#(syntaxHighlightingAsYouTypeAnsiAssignment false )
+		#(syntaxHighlightingAsYouTypeLeftArrowAssignment false )
+		#(wantsMenuIcons true )
+	)! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:11:45'!
+machine: machinePref
+" Update the preferences for this kind of machine (#default, #slow or #smalltalk80) "
+	(self perform: machinePref value, #Machine) do: [:array | 		PreferenceNG at: array first put: array second].
+	machinePref value == #slow ifTrue: [		self runningWorld backgroundImageData: nil]
+	! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:09:27'!
+menuIcon: wantsMenuIconsPref
+	Theme current class beCurrent! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:42:38'!
+pointer: pointerPref! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:13:10'!
+slowMachine
+	^ #(
+		(drawKeyboardFocusIndicator false )
+		(balloonHelpEnabled false)
+		(browseWithPrettyPrint false)
+		(caseSensitiveFinds true)
+		(checkForSlips false)
+		(cmdDotEnabled true)
+		(diffsInChangeList true)
+		(diffsWithPrettyPrint false)
+		(menuKeyboardControl false)
+		(optionalButtons false)
+		(subPixelRenderFonts true)
+		(thoroughSenders true)
+		(cheapWindowReframe true)
+		(syntaxHighlightingAsYouType false)
+		(tapAndHoldEmulatesButton2 false)
+		(clickGrabsMorphs true)
+		(wantsMenuIcons false )
+		(methodAnnotations #(timeStamp messageCategory packages changeSets) )
+		(classAnnotations  #(instanceMethodsCount classMethodsCount) )
+		(systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount) )
+	)! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:08:13'!
+smalltalk80Machine
+	^ #(
+		(drawKeyboardFocusIndicator false )
+		(balloonHelpEnabled false)
+		(browseWithPrettyPrint false)
+		(caseSensitiveFinds true)
+		(checkForSlips false)
+		(cmdDotEnabled true)
+		(diffsInChangeList true)
+		(diffsWithPrettyPrint false)
+		(menuKeyboardControl false)
+		(optionalButtons false)
+		(subPixelRenderFonts true)
+		(thoroughSenders true)
+		(cheapWindowReframe true)
+		(syntaxHighlightingAsYouType false)
+		(tapAndHoldEmulatesButton2 false)
+		(clickGrabsMorphs true)
+		(wantsMenuIcons false )
+	)! !
+
+
+!PreferenceNG class methodsFor: 'fonts' stamp: 'hlsf 5/3/2022 18:58:38'!
 fontSizes
 	^ `{
 		#tinyFonts -> 7 .
@@ -245,7 +506,7 @@ fontSizes
 		#hugeFonts -> 32} asDictionary`
 		! !
 
-!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 19:38:13'!
+!PreferenceNG class methodsFor: 'fonts' stamp: 'hlsf 5/3/2022 19:38:13'!
 setDefaultFont: aFontName
 	"Change the font on the whole system without changing point sizes."
 	FontFamily defaultFamilyName: aFontName.
@@ -261,7 +522,7 @@ setDefaultFont: aFontName
 	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
 	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].! !
 
-!PreferenceNG class methodsFor: 'fonts handling' stamp: 'hlsf 5/3/2022 19:39:30'!
+!PreferenceNG class methodsFor: 'fonts' stamp: 'hlsf 5/3/2022 19:39:30'!
 setDefaultFont: fontFamilyName spec: defaultFontsSpec
 	| font |
 	defaultFontsSpec do: [ :triplet |
@@ -273,124 +534,22 @@ setDefaultFont: fontFamilyName spec: defaultFontsSpec
 	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].! !
 
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 19:50:36'!
-cuisDefaults
-	^ #( #(#cacheTrueTypeGlyphs #font true )
-		#(#loadOnlyLatinGlyphData #font true )
-		#(#properDisplayAlphaForFonts #font false )	
-		#(#subPixelRenderColorFonts #font true )
-		#(#drawKeyboardFocusIndicator #gui true )
-		#(#balloonHelpEnabled #gui true )
-		#(#biggerCursors #gui false )
-		#(#browseWithPrettyPrint #programming false )
-		#(#caseSensitiveFinds #system false )
-		#(#checkForSlips #system true )
-		#(#cmdDotEnabled #system true )
-		#(#diffsInChangeList #programming true )
-		#(#diffsWithPrettyPrint #programming false )
-		#(#menuKeyboardControl #gui true )
-		#(#optionalButtons #gui true )
-		#(#extraDebuggerButtons #programming true )
-		#(#subPixelRenderFonts #gui true )
-		#(#thoroughSenders #programming true )
-		#(#cheapWindowReframe #gui false )
-		#(#syntaxHighlightingAsYouType #programming true )
-		#(#tapAndHoldEmulatesButton2 #gui true )
-		#(#clickGrabsMorphs #gui false )
-		#(#syntaxHighlightingAsYouTypeAnsiAssignment #programming false )
-		#(#syntaxHighlightingAsYouTypeLeftArrowAssignment #programming false )
-		#(#wantsMenuIcons #gui true )
-		#(#classAnnotations #programming #(instanceMethodsCount classMethodsCount linesOfCode))
-		#(#methodAnnotations #programming #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets))
-		#(#systemCategoryAnnotations #programming #(classCount instanceMethodsCount classMethodsCount linesOfCode))
-	)! !
+!PreferenceNG class methodsFor: 'obsolete' stamp: 'hlsf 5/4/2022 14:56:05'!
+desktopMenuTitle
+"I have project to get rid of this one"
+	^ 'World'   ! !
 
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 19:54:51'!
-defaultFontPreferences
-	| myPref |
-	myPref _ PreferenceNG 
-		name: #guiElementsSize 
-		description: 'Size of the graphic intereface element' 
-		category: #gui 
-		type: #(tinyFonts verySmallFonts smallFonts standardFonts largeFonts veryLargeFonts hugeFonts)
-		value: #standardFonts.
-	myPref when: #preferenceChanged send: #defaultFontSize: to: PreferenceNG.
-	"Trigger manually, the preference was instantiated with value, so no setter message sent"
-	myPref triggerEvent: #preferenceChanged with: myPref. ! !
-
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/2/2022 22:11:47'!
-defaultHaloPreferencesWith: anArray
-	| aColor |
-	^ PreferenceNG 
-		name: #haloSpecifications 
-		description: 'Halo specifications describing which halos are to be used, what they should look like, and where they should be situated'
-		category: #gui
-		type: Array
-		value: (anArray collect: [ :each |
-			aColor _ Color.
-			each fourth do: [ :sel | aColor _ aColor perform: sel].
-			HaloSpec new 
-				horizontalPlacement: each second
-				verticalPlacement: each third 
-				color: aColor
-				iconSymbol: each fifth
-				addHandleSelector: each first
-				hoverHelp: each sixth])! !
-
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 21:23:24'!
-defaultMiscPreferences
-	PreferenceNG 
-		name: #haloHandleSize description: 'Size of the halo handle' category: #gui 
-		type: nil value: [(PreferenceNG at: #standardListFont) pointSize * 5 // 3 max: 16].
-	PreferenceNG
-		name: #roundedButtonsRadius description: 'Radius of the button corner, when rounded' 	category: #gui
-		type: nil value: [(PreferenceNG at: #standardListFont) pointSize * 8 // 14].
-	PreferenceNG
-		name: #roundedWindowRadius description: 'Radius of the window corner, when rounded' 	category: #gui
-		type: nil value: [(PreferenceNG at: #standardListFont) pointSize].
-	PreferenceNG
-		name: #scrollbarThickness category: #gui 		value: [(PreferenceNG at: #windowTitleFont) pointSize + 2]! !
-
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/1/2022 18:48:26'!
-iconicHaloSpecifications
-"Answer an array that characterizes the locations, colors, icons, and selectors of the halo handles 
-that may be used in the iconic halo scheme"
-
-^ #(	"selector						horiz			vert			color info						icon key"
-	(addDismissHandle:						left			top			(red)						haloDismissIcon 						'Remove')
-	(addMenuHandle:						leftCenter			top			(blue lighter)						haloMenuIcon 						'Menu')
-	(addGrabHandle:						center			top			(black)						haloGrabIcon 						'Pick up')
-	(addDragHandle:						rightCenter			top			(brown)						haloDragIcon 						'Move')
-	(addDupHandle:						right			top			(green)						haloDuplicateIcon 						'Duplicate')	
-
-	(addExploreHandle:						left			topCenter			(orange)						haloDebugIcon 						'Explore')
-	(addDebugHandle:						right			topCenter			(orange)						haloDebugIcon 						'Debug')
-	(addCollapseHandle:						left			center			(tan)						haloCollapseIcon 						'Collapse')
-	(addScaleHandle:						right			center			(blue)						haloScaleIcon 						'Change scale')
-
-	(addRotateHandle:						left			bottom			(blue)						haloRotateIcon 						'Rotate')
-	(addHelpHandle:						center			bottom			(lightBlue)						haloHelpIcon 						'Help')
-	(addResizeHandle:						right			bottom			(yellow)						haloResizeIcon 						'Change size')
-
-	"FIXME - Currently non-functional...
-	(addRecolorHandle:						right			bottomCenter			(magenta darker)						haloColorIcon 						'Change color')
-	"
-)! !
-
-!PreferenceNG class methodsFor: 'default preferences' stamp: 'hlsf 5/3/2022 21:24:41'!
-reset
-	ThePreferences _ Dictionary new.
-	self cuisDefaults do: [:anArray |
-		self 
-			name: anArray first 
-			description: '' 
-			category: anArray second 
-			type: (self detectType: anArray third)
-			value: anArray third].
-	self defaultHaloPreferencesWith: self iconicHaloSpecifications.
-	self defaultFontPreferences.
-	self defaultMiscPreferences 
-		! !
+!PreferenceNG class methodsFor: 'obsolete' stamp: 'hlsf 4/30/2022 14:39:32'!
+import
+"Import the preferences from the old system"
+	Preferences preferencesDictionary valuesDo: [:oldPref |
+		PreferenceNG 
+			name: oldPref name 
+			description: (oldPref instVarNamed: #helpString)
+			category: (oldPref instVarNamed: #categoryList) first
+			type: Object
+			value: oldPref preferenceValue 
+		]! !
 
 
 PreferenceNG initialize!
