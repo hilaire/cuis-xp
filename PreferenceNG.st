@@ -1,4 +1,4 @@
-'From Cuis 6.0 [latest update: #5113] on 7 May 2022 at 1:13:36 am'!
+'From Cuis 6.0 [latest update: #5113] on 9 May 2022 at 10:02:19 pm'!
 !classDefinition: #PreferenceNG category: #'System-Support'!
 Object subclass: #PreferenceNG
 	instanceVariableNames: 'name description category value type'
@@ -44,6 +44,14 @@ name: nameSymbol description: aString category: categorySymbol type: aType value
 	value _ 	aValue! !
 
 
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/9/2022 21:59:33'!
+accept: aVisitor
+	| visitMethod |
+	self isTypeAClass 
+		ifTrue: [ visitMethod _ ('visit', type name, ':') asSymbol ]
+		ifFalse: [visitMethod _ ('visit', type species, ':') asSymbol ].
+	aVisitor perform: visitMethod with: self! !
+
 !PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 4/30/2022 14:25:45'!
 category
 	^ category ! !
@@ -76,16 +84,21 @@ value
 		ifFalse: [value]
 	! !
 
-!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/3/2022 20:54:17'!
+!PreferenceNG methodsFor: 'accessing' stamp: 'hlsf 5/9/2022 22:01:23'!
 value: aValue	
-	type class class == Metaclass "type is a Class"
+	self isTypeAClass 
 		ifTrue: [
 			(aValue isKindOf: type) ifFalse: [self error: aValue printString, ' is not a ', type printString].
-			value _ aValue .				
-			]
+			value _ aValue ]
 		ifFalse: [ "Should be handled somehow by the preference editor "
 			value _ aValue].
 	self triggerEvent: #preferenceChanged with: self! !
+
+
+!PreferenceNG methodsFor: 'testing' stamp: 'hlsf 5/9/2022 22:01:40'!
+isTypeAClass
+" is type a Class or an Instance "
+	^ type class class == Metaclass ! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -160,131 +173,12 @@ doesNotUnderstand: aMessage
 	^ self at: aMessage selector! !
 
 
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 22:50:44'!
-cuisDefaultsFont
-	^ #( 
-		#(aaFontsColormapDepth 4)
-		#(cacheTrueTypeGlyphs true )
-		#(guiElementsSize standardFonts #(tinyFonts verySmallFonts smallFonts standardFonts largeFonts veryLargeFonts hugeFonts) #defaultFontSize: )
-		#(loadOnlyLatinGlyphData true )
-		#(properDisplayAlphaForFonts false )	
-		#(subPixelRenderColorFonts true )
-	)! !
-
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/4/2022 20:22:05'!
-cuisDefaultsGui
-	^ #( 
-		#(balloonHelpEnabled true )
-		#(biggerCursors false )		
-		#(cacheDisplayContentWhenMovingMorphs true )
-		#(cheapWindowReframe false )		
-		#(clickGrabsMorphs false )	
-		#(ctrlArrowsScrollHorizontally false ) 
-		#(drawKeyboardFocusIndicator true )
-		#(focusFollowsMouse true )
-		#(focusIndicatorWidth 1)
-		#(fullScreenLeavesDeskMargins true )
-		#(haloEnclosesFullBounds true )
-		#(halosShowCoordinateSystem true )
-		#(menuKeyboardControl true )
-		#(optionalButtons true )		
-		#(selectiveHalos true )
-		#(subPixelRenderFonts true )	
-		#(tapAndHoldEmulatesButton2 true )
-		#(tileResizerInWindowMenu true )
-		#(wantsMenuIcons true )
-	)! !
-
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 23:10:14'!
-cuisDefaultsProgramming
-	^ #(
-		#(allowBlockArgumentAssignment false )
-		#(alternativeBrowseIt false )
-		#(assignmentGlyphSelector useLeftArrow #(useLeftArrow useAlwaysLeftArrow) assignmentGlyph: )
-		#(backgroundColorFillsAllBackground true )
-		#(browseWithPrettyPrint false )
-		#(classAnnotations #(instanceMethodsCount classMethodsCount linesOfCode) )
-		#(debugHaloHandle true )
-		#(debugLogTimestamp true )
-		#(debugShowDamage false )
-		#(decorateBrowserButtons true )
-		#(diffsInChangeList true )
-		#(diffsWithPrettyPrint false )
-		#(extraDebuggerButtons true )
-		#(fullPrintItInWorkspaces false )
-		#(highlightBlockNesting true )
-		#(italicsInShout true)
-		#(leftArrowAssignmentsInGeneratedCode false )
-		#(listClassesHierarchically true )
-		#(logDebuggerStackToFile false )
-		#(methodAnnotations #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets) )	
-		#(prettyPrintRectangularBlocks false )
-		#(shiftClickShowsImplementors false )
-		#(shoutInWorkspaces true )
-		#(showAnnotations true )
-		#(showLinesInHierarchyViews true )
-		#(stylingWithEmphasisInWorkspaces false )
-		#(systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount linesOfCode) )
-		#(syntaxHighlightingAsYouType true )
-		#(syntaxHighlightingAsYouTypeAnsiAssignment false )
-		#(syntaxHighlightingAsYouTypeLeftArrowAssignment false )
-		#(thoroughSenders true )
-	)! !
-
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 19:43:42'!
-cuisDefaultsSystem
-	^ #( #(allowNonLocalReturnsInExceptionHandlers true )
-		#(askConfirmationOnQuit true )
-		#(askToInstallComplexPackage true )
-		#(automaticPlatformSettings true )
-		#(autoNumberUserChanges false )
-		#(caseSensitiveFinds false )
-		#(changeSetVersionNumbers true )
-		#(checkForSlips true )
-		#(checkLostChangesOnStartUp false )
-		#(cmdDotEnabled true )
-		#(cmdDotInterruptTakesStatistics false )
-		#(dismissAllOnOptionClose false )
-		#(initialFileListDirectories #roots )
-		#(machine default #(default slow smalltalk80) )
-		#(pointer finger #(finger mouse))
-		#(selectionsMayShrink true )
-		#(serverMode false )
-		#(systemWindowEmbedOK false )
-		#(transcriptLogVerbose true )
-		#(userChangeFileNameExtension '.user.changes' )
-		#(warnAboutNonLocalReturnsInExceptionHandlers false )
-		#(warnIfNoChangesFile true )
-		#(warnIfNoSourcesFile true )
-	)! !
-
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/6/2022 23:07:40'!
-iconicHaloSpecifications
-"Answer an array that characterizes the locations, colors, icons, and selectors of the halo handles 
-that may be used in the iconic halo scheme"
-
-^ #(	"selector					horiz			vert			color info				icon key"
-(addDismissHandle:						left			top			(red)				haloDismissIcon 					'Remove')
-(addMenuHandle:						leftCenter			top			(blue lighter)				haloMenuIcon 					'Menu')
-(addGrabHandle:						center			top			(black)				haloGrabIcon 					'Pick up')
-(addDragHandle:						rightCenter			top			(brown)				haloDragIcon 					'Move')
-(addDupHandle:						right			top			(green)				haloDuplicateIcon     					'Duplicate')	
-(addExploreHandle:						left			topCenter			(orange)				haloDebugIcon 					'Explore')
-(addDebugHandle:						right			topCenter			(orange)				haloDebugIcon 					'Debug')
-(addCollapseHandle:						left			center			(tan)				haloCollapseIcon 					'Collapse')
-(addScaleHandle:						right			center			(blue)				haloScaleIcon 					'Change scale')
-(addRotateHandle:						left			bottom			(blue)				haloRotateIcon 					'Rotate')
-(addHelpHandle:						center			bottom			(lightBlue)				haloHelpIcon 					'Help')
-(addResizeHandle:						right			bottom			(yellow)				haloResizeIcon 					'Change size')
-	"FIXME - Currently non-functional...
-	(addRecolorHandle:						right			bottomCenter			(magenta darker)						haloColorIcon 						'Change color')	"
-)! !
-
-!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/7/2022 00:45:34'!
+!PreferenceNG class methodsFor: 'class initialization' stamp: 'hlsf 5/7/2022 18:06:54'!
 initialize
 	ThePreferences _ Dictionary new.
 	#(gui font programming system) do: [: category | 
-		self installDefault: (self perform: (#cuisDefaults, category capitalized) asSymbol) in: category].
+		(self perform: (#pref, category capitalized) asSymbol) do: [:aPrefArray |
+			self installDefault: aPrefArray in: category] ].
 	self installHaloPreferencesWith: self iconicHaloSpecifications.
 	self installMiscPreferences ! !
 
@@ -382,32 +276,30 @@ detectType: anObject
 ! !
 
 
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:45'!
-assignmentGlyph: assignmentPref
-" #assignmentGliphSelector changed "
-	AbstractFont withAllSubclassesDo: [ :fontClass | fontClass assignmentGlyphSelectorPreferenceChanged ]! !
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/6/2022 23:07:40'!
+iconicHaloSpecifications
+"Answer an array that characterizes the locations, colors, icons, and selectors of the halo handles 
+that may be used in the iconic halo scheme"
 
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:12'!
-defaultFontSize: guiElementSizePref
-" #guiElementSize changed "
-	| font titleFont pointSize |
-	pointSize _ self fontSizes at: guiElementSizePref value.
-	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize.
-	PreferenceNG name: #standardListFont category: #font value: font.
-	PreferenceNG name: #standardMenuFont category: #font value: font.
-	PreferenceNG name: #standardCodeFont category: #font value: font.
-	PreferenceNG name: #standardButtonFont category: #font value: font.
-	FontFamily defaultFamilyName: font familyName defaultPointSize: pointSize.	
-	titleFont _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize * 12//10.
-	PreferenceNG name: #windowTitleFont category: #font value: titleFont.
-	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
-	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].
-	PreferenceNG at: #biggerCursors put: (pointSize > 14).
-	Cursor defaultCursor activateCursor.
-	^font! !
+^ #(	"selector					horiz			vert			color info				icon key"
+(addDismissHandle:						left			top			(red)				haloDismissIcon 					'Remove')
+(addMenuHandle:						leftCenter			top			(blue lighter)				haloMenuIcon 					'Menu')
+(addGrabHandle:						center			top			(black)				haloGrabIcon 					'Pick up')
+(addDragHandle:						rightCenter			top			(brown)				haloDragIcon 					'Move')
+(addDupHandle:						right			top			(green)				haloDuplicateIcon     					'Duplicate')	
+(addExploreHandle:						left			topCenter			(orange)				haloDebugIcon 					'Explore')
+(addDebugHandle:						right			topCenter			(orange)				haloDebugIcon 					'Debug')
+(addCollapseHandle:						left			center			(tan)				haloCollapseIcon 					'Collapse')
+(addScaleHandle:						right			center			(blue)				haloScaleIcon 					'Change scale')
+(addRotateHandle:						left			bottom			(blue)				haloRotateIcon 					'Rotate')
+(addHelpHandle:						center			bottom			(lightBlue)				haloHelpIcon 					'Help')
+(addResizeHandle:						right			bottom			(yellow)				haloResizeIcon 					'Change size')
+	"FIXME - Currently non-functional...
+	(addRecolorHandle:						right			bottomCenter			(magenta darker)						haloColorIcon 						'Change color')	"
+)! !
 
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:06:35'!
-defaultMachine
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:54:36'!
+machineDefault
 	^ #(
 		#(drawKeyboardFocusIndicator true )
 		#(balloonHelpEnabled true )
@@ -432,22 +324,8 @@ defaultMachine
 		#(wantsMenuIcons true )
 	)! !
 
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:11:45'!
-machine: machinePref
-" Update the preferences for this kind of machine (#default, #slow or #smalltalk80) "
-	(self perform: machinePref value, #Machine) do: [:array | 		PreferenceNG at: array first put: array second].
-	machinePref value == #slow ifTrue: [		self runningWorld backgroundImageData: nil]
-	! !
-
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:09:27'!
-menuIcon: wantsMenuIconsPref
-	Theme current class beCurrent! !
-
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:42:38'!
-pointer: pointerPref! !
-
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:13:10'!
-slowMachine
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:54:24'!
+machineSlow
 	^ #(
 		(drawKeyboardFocusIndicator false )
 		(balloonHelpEnabled false)
@@ -471,8 +349,8 @@ slowMachine
 		(systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount) )
 	)! !
 
-!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:08:13'!
-smalltalk80Machine
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:54:51'!
+machineSmalltalk80
 	^ #(
 		(drawKeyboardFocusIndicator false )
 		(balloonHelpEnabled false)
@@ -492,6 +370,148 @@ smalltalk80Machine
 		(clickGrabsMorphs true)
 		(wantsMenuIcons false )
 	)! !
+
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:57:18'!
+prefFont
+	^ #( 
+		#(aaFontsColormapDepth 4)
+		#(cacheTrueTypeGlyphs true )
+		#(guiElementsSize standardFonts #(tinyFonts verySmallFonts smallFonts standardFonts largeFonts veryLargeFonts hugeFonts) defaultFontSize: )
+		#(loadOnlyLatinGlyphData true )
+		#(properDisplayAlphaForFonts false )	
+		#(subPixelRenderColorFonts true )
+	)! !
+
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:53:40'!
+prefGui
+	^ #( 
+		#(balloonHelpEnabled true )
+		#(biggerCursors false )		
+		#(cacheDisplayContentWhenMovingMorphs true )
+		#(cheapWindowReframe false )		
+		#(clickGrabsMorphs false )	
+		#(ctrlArrowsScrollHorizontally false ) 
+		#(drawKeyboardFocusIndicator true )
+		#(focusFollowsMouse true )
+		#(focusIndicatorWidth 1)
+		#(fullScreenLeavesDeskMargins true )
+		#(haloEnclosesFullBounds true )
+		#(halosShowCoordinateSystem true )
+		#(menuKeyboardControl true )
+		#(optionalButtons true )		
+		#(selectiveHalos true )
+		#(subPixelRenderFonts true )	
+		#(tapAndHoldEmulatesButton2 true )
+		#(tileResizerInWindowMenu true )
+		#(wantsMenuIcons true )
+	)! !
+
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 17:53:54'!
+prefProgramming
+	^ #(
+		#(allowBlockArgumentAssignment false )
+		#(alternativeBrowseIt false )
+		#(assignmentGlyphSelector useLeftArrow #(useLeftArrow useAlwaysLeftArrow) assignmentGlyph: )
+		#(backgroundColorFillsAllBackground true )
+		#(browseWithPrettyPrint false )
+		#(classAnnotations #(instanceMethodsCount classMethodsCount linesOfCode) )
+		#(debugHaloHandle true )
+		#(debugLogTimestamp true )
+		#(debugShowDamage false )
+		#(decorateBrowserButtons true )
+		#(diffsInChangeList true )
+		#(diffsWithPrettyPrint false )
+		#(extraDebuggerButtons true )
+		#(fullPrintItInWorkspaces false )
+		#(highlightBlockNesting true )
+		#(italicsInShout true)
+		#(leftArrowAssignmentsInGeneratedCode false )
+		#(listClassesHierarchically true )
+		#(logDebuggerStackToFile false )
+		#(methodAnnotations #(timeStamp linesOfCode messageCategory implementorsCount sendersCount  packages changeSets) )	
+		#(prettyPrintRectangularBlocks false )
+		#(shiftClickShowsImplementors false )
+		#(shoutInWorkspaces true )
+		#(showAnnotations true )
+		#(showLinesInHierarchyViews true )
+		#(stylingWithEmphasisInWorkspaces false )
+		#(systemCategoryAnnotations #(classCount instanceMethodsCount classMethodsCount linesOfCode) )
+		#(syntaxHighlightingAsYouType true )
+		#(syntaxHighlightingAsYouTypeAnsiAssignment false )
+		#(syntaxHighlightingAsYouTypeLeftArrowAssignment false )
+		#(thoroughSenders true )
+	)! !
+
+!PreferenceNG class methodsFor: 'data' stamp: 'hlsf 5/7/2022 18:15:12'!
+prefSystem
+	^ #( #(allowNonLocalReturnsInExceptionHandlers true )
+		#(askConfirmationOnQuit true )
+		#(askToInstallComplexPackage true )
+		#(automaticPlatformSettings true )
+		#(autoNumberUserChanges false )
+		#(caseSensitiveFinds false )
+		#(changeSetVersionNumbers true )
+		#(checkForSlips true )
+		#(checkLostChangesOnStartUp false )
+		#(cmdDotEnabled true )
+		#(cmdDotInterruptTakesStatistics false )
+		#(dismissAllOnOptionClose false )
+		#(initialFileListDirectories #roots #(root image vm current) )
+		#(machine default #(default slow smalltalk80) machine: )
+		#(pointer mouse #(touch mouse) pointer:)
+		#(selectionsMayShrink true )
+		#(serverMode false )
+		#(systemWindowEmbedOK false )
+		#(transcriptLogVerbose true )
+		#(userChangeFileNameExtension '.user.changes' )
+		#(warnAboutNonLocalReturnsInExceptionHandlers false )
+		#(warnIfNoChangesFile true )
+		#(warnIfNoSourcesFile true )
+	)! !
+
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:45'!
+assignmentGlyph: assignmentPref
+" #assignmentGliphSelector changed "
+	AbstractFont withAllSubclassesDo: [ :fontClass | fontClass assignmentGlyphSelectorPreferenceChanged ]! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 00:41:12'!
+defaultFontSize: guiElementSizePref
+" #guiElementSize changed "
+	| font titleFont pointSize |
+	pointSize _ self fontSizes at: guiElementSizePref value.
+	font _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize.
+	PreferenceNG name: #standardListFont category: #font value: font.
+	PreferenceNG name: #standardMenuFont category: #font value: font.
+	PreferenceNG name: #standardCodeFont category: #font value: font.
+	PreferenceNG name: #standardButtonFont category: #font value: font.
+	FontFamily defaultFamilyName: font familyName defaultPointSize: pointSize.	
+	titleFont _ FontFamily familyName: FontFamily defaultFamilyName pointSize: pointSize * 12//10.
+	PreferenceNG name: #windowTitleFont category: #font value: titleFont.
+	MorphicCanvas allSubclassesDo: [ :c| c guiSizePreferenceChanged ].
+	UISupervisor ui ifNotNil: [ :w | w fontPreferenceChanged ].
+	PreferenceNG at: #biggerCursors put: (pointSize > 14).
+	Cursor defaultCursor activateCursor.
+	^font! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 18:08:45'!
+machine: machinePref
+" Update the preferences for this kind of machine (#default, #slow or #smalltalk80) "
+	| prefArray |
+	prefArray _ self perform: (#machine, machinePref value capitalized) asSymbol.
+	prefArray do: [:array | 		PreferenceNG at: array first put: array second].
+	machinePref value == #slow ifTrue: [		self runningWorld backgroundImageData: nil]
+	! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 01:09:27'!
+menuIcon: wantsMenuIconsPref
+	Theme current class beCurrent! !
+
+!PreferenceNG class methodsFor: 'event handlers' stamp: 'hlsf 5/7/2022 17:43:12'!
+pointer: pointerPref
+	| enabled |
+	enabled _ pointerPref value == #touch.
+	#(tapAndHoldEmulatesButton2 clickGrabsMorphs) do: [:aPref | 		PreferenceNG at: aPref put: enabled]! !
 
 
 !PreferenceNG class methodsFor: 'fonts' stamp: 'hlsf 5/3/2022 18:58:38'!
