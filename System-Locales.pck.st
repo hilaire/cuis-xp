@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 14 March 2022 at 10:05:01 pm'!
+'From Cuis 6.0 [latest update: #5113] on 14 May 2022 at 9:40:02 am'!
 'Description '!
-!provides: 'System-Locales' 1 6!
+!provides: 'System-Locales' 1 7!
 SystemOrganization addCategory: 'System-Locales'!
 
 
@@ -58,10 +58,10 @@ http://mitglied.lycos.de/buran/knowhow/codes/locales/!
 !LocaleID commentStamp: '' prior: 0!
 The ID for localization!
 
-!Locale class methodsFor: 'system startup' stamp: 'hlsf 2/20/2022 10:09:26'!
+!Locale class methodsFor: 'system startup' stamp: 'hlsf 5/14/2022 09:38:45'!
 startUp: resuming
 	resuming ifFalse: [^self].
-	(Preferences valueOfFlag: #useLocale)
+	(PreferenceNG at: #useLocale)
 		ifTrue: [
 			| newID |
 			newID := self current determineLocaleID.
@@ -2785,14 +2785,15 @@ knownLocales
 	"KnownLocales _ nil"
 	^KnownLocales ifNil: [KnownLocales _ self initKnownLocales]! !
 
-!Locale class methodsFor: 'initialization' stamp: 'hlsf 2/20/2022 09:51:46'!
+!Locale class methodsFor: 'initialization' stamp: 'hlsf 5/14/2022 09:38:28'!
 initialize
 	Smalltalk addToStartUpList: Locale.
-	Preferences
-		addPreference: #useLocale
-		category: #general
-		default: false
-		balloonHelp: 'Use the system locale to set the system language, etc., at startup.  For time-zone handling, see automaticTimezone.'
+	PreferenceNG 
+		name: #useLocale
+		description: 'Use the system locale to set the system language, etc., at startup.  For time-zone handling, see automaticTimezone.'
+		category: #system
+		type: Boolean
+		value: false
 ! !
 
 !Locale class methodsFor: 'initialization'!
