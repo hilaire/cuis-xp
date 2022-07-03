@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5091] on 14 March 2022 at 9:57:42 pm'!
+'From Cuis 6.0 [latest update: #5347] on 3 July 2022 at 12:39:35 pm'!
 'Description '!
-!provides: 'Gettext' 1 18!
+!provides: 'Gettext' 1 19!
 !requires: 'System-Locales' 1 4 nil!
 SystemOrganization addCategory: 'Gettext'!
 
@@ -154,16 +154,6 @@ I am a utility class of Gettext. Most uses are internal to Gettext.
 You can use me to browse all methods sending translation messages to non-string receivers:
 
 	TranslatedReceiverFinder browseNonLiteralReceivers!
-
-!NaturalLanguageTranslator class methodsFor: 'class initialization'!
-startUp: resuming 
-	resuming
-		ifFalse: [^ self].
-	self privateStartUp.! !
-
-!NaturalLanguageTranslator methodsFor: 'printing'!
-printOn: aStream
-	aStream nextPutAll: self class name; nextPut: $(; print: self localeID; nextPut: $)! !
 
 !GetTextExporter methodsFor: 'exporting'!
 appendTranslations: domains 
@@ -414,44 +404,6 @@ keys
 		into: [:set :next | set addAll: next keys;
 				 yourself]! !
 
-!GetTextExporter class methodsFor: 'utilities'!
-listAllHelp
-	"self listAllHelp"
-	| spec specs oCatalog flap flapSelectors allKeys oCatalogHelp flapHelp |
-	oCatalog _ Dictionary new.
-	Morph withAllSubclasses
-		do: [:aClass | (aClass class includesSelector: #descriptionForPartsBin)
-				ifTrue: [spec _ aClass descriptionForPartsBin.
-					oCatalog at: spec formalName put: spec documentation]].
-	Morph withAllSubclasses
-		do: [:aClass | (aClass class includesSelector: #supplementaryPartsDescriptions)
-				ifTrue: [specs _ aClass supplementaryPartsDescriptions.
-					specs
-						do: [:each | oCatalog at: each formalName put: each documentation]]].
-	flap _ Dictionary new.
-	flapSelectors _ #(#defaultsQuadsDefiningPlugInSuppliesFlap #defaultsQuadsDefiningStackToolsFlap #defaultsQuadsDefiningSuppliesFlap #defaultsQuadsDefiningToolsFlap #defaultsQuadsDefiningWidgetsFlap #defaultsQuadsDefiningScriptingFlap ).
-	flapSelectors
-		do: [:selector | 
-			specs _ Flaps perform: selector.
-			specs
-				do: [:each | flap at: each third put: each fourth]].
-	allKeys _ oCatalog keys intersection: flap keys.
-	allKeys asArray sort
-		do: [:each | 
-			oCatalogHelp _ oCatalog
-						at: each
-						ifAbsent: [''].
-			flapHelp _ flap
-						at: each
-						ifAbsent: [''].
-			oCatalogHelp = flapHelp
-				ifFalse: [Transcript cr; show: 'Name: ' , each.
-					Transcript cr; show: 'O: ' , oCatalogHelp.
-					Transcript cr; show: 'F: ' , flapHelp.
-					Transcript cr.
-
-]]! !
-
 !GetTextExporter class methodsFor: 'accessing'!
 defaultSelectors
 	"Answers the selectors that are sent to strings that should be translated"
@@ -579,6 +531,10 @@ fileName: path localeID: id
 	^self new 
 			load:path localeID: id! !
 
+!NaturalLanguageTranslator methodsFor: 'printing'!
+printOn: aStream
+	aStream nextPutAll: self class name; nextPut: $(; print: self localeID; nextPut: $)! !
+
 !NaturalLanguageTranslator methodsFor: 'translation'!
 translate: aString inDomain: aDomainName
 	^ aString! !
@@ -620,6 +576,12 @@ privateStartUp
 	self reset.
 	GetTextTranslator reset.
 	self localeChanged.! !
+
+!NaturalLanguageTranslator class methodsFor: 'class initialization'!
+startUp: resuming 
+	resuming
+		ifFalse: [^ self].
+	self privateStartUp.! !
 
 !NaturalLanguageTranslator class methodsFor: 'actions'!
 reset

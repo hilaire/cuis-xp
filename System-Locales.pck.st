@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5113] on 14 May 2022 at 9:40:02 am'!
+'From Cuis 6.0 [latest update: #5347] on 3 July 2022 at 1:31:40 pm'!
 'Description '!
-!provides: 'System-Locales' 1 7!
+!provides: 'System-Locales' 1 8!
 SystemOrganization addCategory: 'System-Locales'!
 
 
@@ -57,37 +57,6 @@ http://mitglied.lycos.de/buran/knowhow/codes/locales/!
 
 !LocaleID commentStamp: '' prior: 0!
 The ID for localization!
-
-!Locale class methodsFor: 'system startup' stamp: 'hlsf 5/14/2022 09:38:45'!
-startUp: resuming
-	resuming ifFalse: [^self].
-	(PreferenceNG at: #useLocale)
-		ifTrue: [
-			| newID |
-			newID := self current determineLocaleID.
-			newID ~= LocaleID current
-				ifTrue: [self switchToID: newID]]! !
-
-!Locale methodsFor: 'printing'!
-printOn: aStream 
-	super printOn: aStream.
-	aStream nextPutAll:  '(' ; print: id ; nextPutAll:  ')'! !
-
-!LocaleID methodsFor: 'printing'!
-printOn: stream
-	"<language>-<country>"
-	stream nextPutAll: self isoLanguage.
-	self isoCountry
-		ifNotNil: [stream nextPut: $-; nextPutAll: self isoCountry]! !
-
-!LocaleID methodsFor: 'printing'!
-storeOn: aStream 
-	aStream nextPut: $(.
-	aStream nextPutAll: self class name.
-	aStream nextPutAll: ' isoString: '.
-	aStream nextPutAll: '''' , self printString , ''''.
-	aStream nextPut: $).
-! !
 
 !ISOLanguageDefinition methodsFor: 'accessing'!
 iso2
@@ -2606,6 +2575,11 @@ iso3LanguageTable
 
 	^ISO3Table ifNil: [ISO3Table _ self initISO3LanguageTable]! !
 
+!Locale methodsFor: 'printing'!
+printOn: aStream 
+	super printOn: aStream.
+	aStream nextPutAll:  '(' ; print: id ; nextPutAll:  ')'! !
+
 !Locale methodsFor: 'private'!
 fetchISO2Language
 	"Locale current fetchISO2Language"
@@ -2755,6 +2729,16 @@ primVMOffsetToUTC
 	<primitive:'primitiveVMOffsetToUTC' module: 'LocalePlugin'>
 	^0! !
 
+!Locale class methodsFor: 'system startup' stamp: 'hlsf 7/3/2022 13:08:00'!
+startUp: resuming
+	resuming ifFalse: [^self].
+	(Preferences at: #useLocale)
+		ifTrue: [
+			| newID |
+			newID := self current determineLocaleID.
+			newID ~= LocaleID current
+				ifTrue: [self switchToID: newID]]! !
+
 !Locale class methodsFor: 'private' stamp: 'hlsf 2/20/2022 10:07:50'!
 defaultLocales
 	
@@ -2785,10 +2769,10 @@ knownLocales
 	"KnownLocales _ nil"
 	^KnownLocales ifNil: [KnownLocales _ self initKnownLocales]! !
 
-!Locale class methodsFor: 'initialization' stamp: 'hlsf 5/14/2022 09:38:28'!
+!Locale class methodsFor: 'initialization' stamp: 'Install-System-Locales 7/3/2022 12:37:18'!
 initialize
 	Smalltalk addToStartUpList: Locale.
-	PreferenceNG 
+	Preferences 
 		name: #useLocale
 		description: 'Use the system locale to set the system language, etc., at startup.  For time-zone handling, see automaticTimezone.'
 		category: #system
@@ -2933,6 +2917,22 @@ posixName
 	^ self isoCountry
 		ifNil: [self isoLanguage]
 		ifNotNil: [self isoLanguage , '_' , self isoCountry]! !
+
+!LocaleID methodsFor: 'printing'!
+printOn: stream
+	"<language>-<country>"
+	stream nextPutAll: self isoLanguage.
+	self isoCountry
+		ifNotNil: [stream nextPut: $-; nextPutAll: self isoCountry]! !
+
+!LocaleID methodsFor: 'printing'!
+storeOn: aStream 
+	aStream nextPut: $(.
+	aStream nextPutAll: self class name.
+	aStream nextPutAll: ' isoString: '.
+	aStream nextPutAll: '''' , self printString , ''''.
+	aStream nextPut: $).
+! !
 
 !LocaleID methodsFor: 'comparing'!
 = anotherObject
