@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5730] on 28 March 2023 at 9:48:11 pm'!
+'From Cuis 6.0 [latest update: #5730] on 29 March 2023 at 10:34:10 pm'!
 'Description '!
-!provides: 'Paper' 1 13!
+!provides: 'Paper' 1 14!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -37,10 +37,6 @@ Stroke class
 
 !PaperMorph methodsFor: 'event handling testing' stamp: 'hlsf 3/23/2023 12:10:09'!
 handlesMouseDown: event
-	^ true! !
-
-!PaperMorph methodsFor: 'event handling testing' stamp: 'hlsf 3/23/2023 14:59:40'!
-handlesMouseHover: event
 	^ true! !
 
 !PaperMorph methodsFor: 'initialization' stamp: 'hlsf 3/28/2023 20:36:55'!
@@ -129,10 +125,6 @@ mouseButton1Up: event localPosition: localPosition
 	self addStroke.
 	self resetSamplingTo: nil
 ! !
-
-!PaperMorph methodsFor: 'events' stamp: 'hlsf 3/23/2023 15:01:13'!
-mouseHover: event localPosition: localPosition
-	pen position: localPosition ! !
 
 !PaperMorph methodsFor: 'events' stamp: 'hlsf 3/28/2023 21:36:20'!
 mouseMove: event localPosition: localPosition
