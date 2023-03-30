@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5730] on 29 March 2023 at 10:34:10 pm'!
+'From Cuis 6.0 [latest update: #5733] on 30 March 2023 at 1:49:33 pm'!
 'Description '!
-!provides: 'Paper' 1 14!
+!provides: 'Paper' 1 15!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -92,11 +92,11 @@ controlPoint
 				origin2: samples last
 				vector2: (samples atLast: 2) - samples last ].! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/26/2023 13:01:48'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/30/2023 13:48:35'!
 intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
 | det c1 c2 |
 	det := v1 crossProduct: v2.
-	(det closeTo: 0) ifTrue: [^ nil].
+	det squared < 1e-8 ifTrue: [^ nil].
 	c1 := p1 crossProduct: v1.
 	c2 := p2 crossProduct: v2.
 	^ ((c2 * v1 x - (c1 * v2 x) ) / det) @ ((v1 y * c2 - (v2 y * c1)) / det)! !
