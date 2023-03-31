@@ -1,26 +1,26 @@
-'From Cuis 5.0 [latest update: #4253] on 21 July 2020 at 4:45:25 pm'!
+'From Cuis 6.0 [latest update: #5733] on 30 March 2023 at 4:08:35 pm'!
 'Description Draw with a pen and messages as go: turn: etc.'!
-!provides: 'Pen' 1 3!
-SystemOrganization addCategory: #Pen!
+!provides: 'Pen' 1 6!
+SystemOrganization addCategory: 'Pen'!
 
 
-!classDefinition: #Pen category: #Pen!
+!classDefinition: #Pen category: 'Pen'!
 BitBlt subclass: #Pen
 	instanceVariableNames: 'location direction penDown'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Pen'!
-!classDefinition: 'Pen class' category: #Pen!
+!classDefinition: 'Pen class' category: 'Pen'!
 Pen class
 	instanceVariableNames: ''!
 
-!classDefinition: #PenPointRecorder category: #Pen!
+!classDefinition: #PenPointRecorder category: 'Pen'!
 Pen subclass: #PenPointRecorder
 	instanceVariableNames: 'points'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Pen'!
-!classDefinition: 'PenPointRecorder class' category: #Pen!
+!classDefinition: 'PenPointRecorder class' category: 'Pen'!
 PenPointRecorder class
 	instanceVariableNames: ''!
 
@@ -390,7 +390,7 @@ example
 	1 to: 100 do: [:i | bic go: i*4. bic turn: 89].
 ! !
 
-!Pen class methodsFor: 'tablet drawing examples' stamp: 'tpr 3/15/2013 12:42'!
+!Pen class methodsFor: 'tablet drawing examples' stamp: 'hlsf 3/30/2023 15:50:01'!
 feltTip: width cellSize: cellSize
 	"Warning: This example potentially uses a large amount of memory--it creates a Form with cellSize squared bits for every Display pixel."
 	"In this example, all drawing is done into a large, monochrome Form and then scaled down onto the Display using smoothing. The larger the cell size, the more possible shades of gray can be generated, and the smoother the resulting line appears. A cell size of 8 yields 64 possible grays, while a cell size of 16 gives 256 levels, which is about the maximum number of grays that the human visual system can distinguish. The width parameter determines the maximum line thickness. Requires the optional tablet support primitives which may not be supported on all platforms. Works best in full screen mode. Shift-mouse to exit." 
@@ -408,7 +408,7 @@ feltTip: width cellSize: cellSize
 		combinationRule: Form over.
 	Display fillColor: Color white.
 	Display restoreAfter: [ | p r nibSize srcR startP dstR |
-		[Sensor shiftPressed and: [Sensor anyButtonPressed]] whileFalse: [
+		[Sensor shiftPressed and: [Sensor isAnyButtonPressed]] whileFalse: [
 			p := (Sensor tabletPoint * cellSize * tabletScale) rounded.
 			nibSize := (Sensor tabletPressure * (cellSize * width)) rounded.
 		     nibSize > 0
@@ -424,7 +424,7 @@ feltTip: width cellSize: cellSize
 					pen place: p]]].
 ! !
 
-!Pen class methodsFor: 'tablet drawing examples' stamp: 'nice 12/27/2009 03:11'!
+!Pen class methodsFor: 'tablet drawing examples' stamp: 'hlsf 3/30/2023 15:50:08'!
 inkBrush
 	"Similar to simplePressurePen, but this example uses the average of the recent pen pressure values. The effect is that of a Japanese ink brush that comes up gradually off the paper as the brush is lifted, causing end (and beginning) of each stroke to taper. Requires the optional tablet support primitives which may not be supported on all platforms. Works best in full screen mode. Shift-mouse to exit." 
 	"Pen inkBrush"
@@ -437,7 +437,7 @@ inkBrush
 	pen color: Color black.
 	Display fillColor: Color white.
 	Display restoreAfter: [ | sum p averagePressure now currentPressure |
-		[Sensor shiftPressed and: [Sensor anyButtonPressed]] whileFalse: [
+		[Sensor shiftPressed and: [Sensor isAnyButtonPressed]] whileFalse: [
 			"compute the average pressure over last historyMSecs milliseconds"
 			now := Time millisecondClockValue.
 			currentPressure := (20.0 * Sensor tabletPressure) rounded.
@@ -457,7 +457,7 @@ inkBrush
 					pen place: p]]].
 ! !
 
-!Pen class methodsFor: 'tablet drawing examples' stamp: 'nice 12/27/2009 03:11'!
+!Pen class methodsFor: 'tablet drawing examples' stamp: 'hlsf 3/30/2023 15:49:36'!
 simplePressurePen
 	"An example of using a pressure sensitive pen to control the thickness of the pen. This requires the optional tablet support primitives which may not be supported on all platforms. Works best in full screen mode. Shift-mouse to exit." 
 	"Pen simplePressurePen"
@@ -468,7 +468,7 @@ simplePressurePen
 	pen color: Color black.
 	Display fillColor: Color white.
 	Display restoreAfter: [ | p pressure |
-		[Sensor shiftPressed and: [Sensor anyButtonPressed]] whileFalse: [
+		[Sensor shiftPressed and: [Sensor isAnyButtonPressed]] whileFalse: [
 			p := (Sensor tabletPoint * tabletScale) rounded.
 			pressure := (15.0 * Sensor tabletPressure) rounded.
 		     pressure > 0
@@ -488,27 +488,27 @@ tabletScaleFactor
 	^ (Display width asFloat / tabletExtent x) @ (Display height asFloat / tabletExtent y)
 ! !
 
-!Pen class methodsFor: 'tablet drawing examples' stamp: 'nice 12/27/2009 03:11'!
+!Pen class methodsFor: 'tablet drawing examples' stamp: 'hlsf 3/30/2023 16:06:13'!
 testMouseTracking
 	"A very simple example of drawing using the mouse. Compare the tracking speed of this example with that of testTabletTracking. Mouse down to draw a stroke, shift-mouse to exit." 
 	"Pen testMouseTracking"
 
-	| pen |
+	| pen p|
 	pen := Pen newOnForm: Display.
 	pen roundNib: 8.
 	pen color: Color black.
 	Display fillColor: Color white.
-	Display restoreAfter: [ | p |
-		[Sensor shiftPressed and: [Sensor anyButtonPressed]] whileFalse: [
-			p := Sensor cursorPoint.
-		     Sensor anyButtonPressed
-				ifTrue: [pen goto: p]
-				ifFalse: [
-					pen color: Color random.
-					pen place: p]]].
+	[Sensor shiftPressed] whileFalse: [
+		p := Sensor mousePoint.
+		Sensor isMouseButton1Pressed 
+			ifTrue: [pen goto: p]
+			ifFalse: [
+				pen color: Color random.
+				pen place: p]].
+	Display restore
 ! !
 
-!Pen class methodsFor: 'tablet drawing examples' stamp: 'nice 12/27/2009 03:11'!
+!Pen class methodsFor: 'tablet drawing examples' stamp: 'hlsf 3/30/2023 15:49:29'!
 testTabletTracking
 	"A very simple example of drawing using the pen of a digitizing tablet such as a Wacom ArtZ tablet. This requires the optional tablet support primitives which may not be supported on all platforms. Compare the tracking speed of this example with that of testMouseTracking. On a Macintosh, the tablet primitives provide roughly 120 samples/second versus only 60 mouse samples/second, and the difference is noticable. Works best in full screen mode. Mouse down to draw a stroke, shift-mouse to exit." 
 	"Pen testTabletTracking"
@@ -520,7 +520,7 @@ testTabletTracking
 	pen color: Color black.
 	Display fillColor: Color white.
 	Display restoreAfter: [ | p |
-		[Sensor shiftPressed and: [Sensor anyButtonPressed]] whileFalse: [
+		[Sensor shiftPressed and: [Sensor isAnyButtonPressed]] whileFalse: [
 			p := (Sensor tabletPoint * tabletScale) rounded.
 		     Sensor tabletPressure > 0
 				ifTrue: [pen goto: p]

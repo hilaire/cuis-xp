@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5733] on 30 March 2023 at 1:49:33 pm'!
+'From Cuis 6.0 [latest update: #5733] on 1 April 2023 at 12:10:53 am'!
 'Description '!
-!provides: 'Paper' 1 15!
+!provides: 'Paper' 1 19!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -64,33 +64,38 @@ addStroke
 	self redrawNeeded.
 	^ stroke! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/28/2023 20:40:58'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/31/2023 21:10:53'!
 clearStrokes
 	self resetSamplingTo: nil.
+	mouseStrokes := OrderedCollection new. "To remove, see resetSampling: "
 	strokes := OrderedCollection new.
 	self redrawNeeded ! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/27/2023 21:07:21'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 00:01:03'!
 controlPoint
 	" Compute the control point according to current and previous stroke "
-	| lastStroke |
+	| lastStroke regressionStart regressionEnd count |
+	count := self samples // 2. "Size collection for regression"
 	lastStroke := strokes lastIfEmpty: [nil].
 	^ (lastStroke notNil and: [
 		lastStroke control notNil and: [ lastStroke end == samples first ]])
 		ifTrue: [
 			" we have continuity, ensure we have C1 continuity between the new stroke and the previous one "
+			regressionEnd := self regressionFrom: self samples - count to: self samples.
 			self
 				intersectionOrigin1: samples first
 				vector1: lastStroke control - samples first
-				origin2: samples last
-				vector2: (samples atLast: 2) - samples last ]
+				origin2: 0@ regressionEnd second asFloat
+				vector2:  1@ regressionEnd first asFloat]
 		ifFalse: [
 			" The new stroke is disconnected from the previous one "
+			regressionStart := self regressionFrom: 1 to: count.
+			regressionEnd := self regressionFrom: self samples - count to: self samples.
 			self
-				intersectionOrigin1: samples first
-				vector1: samples second - samples first
-				origin2: samples last
-				vector2: (samples atLast: 2) - samples last ].! !
+				intersectionOrigin1: 0@regressionStart second asFloat
+				vector1: 1@regressionStart first asFloat
+				origin2: 0@regressionEnd second asFloat
+				vector2: 1@regressionEnd first asFloat].! !
 
 !PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/30/2023 13:48:35'!
 intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
@@ -101,10 +106,16 @@ intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
 	c2 := p2 crossProduct: v2.
 	^ ((c2 * v1 x - (c1 * v2 x) ) / det) @ ((v1 y * c2 - (v2 y * c1)) / det)! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/28/2023 20:40:24'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 00:06:19'!
+regressionFrom: i to: j
+"Compute a linear regression from samples i to j"
+	^ (samples collect: [:position | position x ] from: i to: j) 		
+		regression: 	(samples collect: [:position | position y ] from: i to: j)! !
+
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 3/31/2023 21:07:49'!
 resetSamplingTo: aPoint
 	samples := OrderedCollection new.
-	mouseStrokes := OrderedCollection new.
+	"mouseStrokes := OrderedCollection new."
 	aPoint ifNotNil: [
 		samples add: aPoint.
 		mouseStrokes add: aPoint]
@@ -139,15 +150,15 @@ mouseMove: event localPosition: localPosition
 			self addStroke ifNotNil: [self resetSamplingTo: localPosition]]
 		]! !
 
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/28/2023 20:21:38'!
-addCustomMenuItems: aCustomMenu hand: aHandMorph
-	super addCustomMenuItems: aCustomMenu hand: aHandMorph.
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/31/2023 23:47:22'!
+addStandardHaloMenuItemsTo: aCustomMenu hand: aHandMorph
 	aCustomMenu 
 		add: 'samples size' action: #setSampleSize;
 		add: 'sampling threshold' action: #setThreshold;
 		addUpdating: #showPointsString action: #pointsOnOff;
 		addUpdating: #showControlsString action: #controlsOnOff;
 		addUpdating: #showTangentsString action: #tangentsOnOff;
+		addUpdating: #showMouseStrokesString action: #mouseStrokesOnOff;
 		add: 'clear' action: #clearStrokes! !
 
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:52:11'!
@@ -155,6 +166,13 @@ controlsOnOff
 	self 
 		setProperty: #showControls
 		toValue: self showControls not.
+	self redrawNeeded ! !
+
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/31/2023 23:38:40'!
+mouseStrokesOnOff
+	self 
+		setProperty: #showMouseStrokes
+		toValue: self showMouseStrokes not.
 	self redrawNeeded ! !
 
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:52:05'!
@@ -198,6 +216,15 @@ showControlsString
 	^ self showControls asMenuItemTextPrefix , 
 		'show controls'! !
 
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/31/2023 23:38:00'!
+showMouseStrokes
+	^ self valueOfProperty: #showMouseStrokes ifAbsent: [false]! !
+
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/31/2023 23:37:33'!
+showMouseStrokesString
+	^ self showMouseStrokes asMenuItemTextPrefix , 
+		'show mouse strokes'! !
+
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:31'!
 showPoints
 	^ self valueOfProperty: #showPoints ifAbsent: [false]! !
@@ -231,14 +258,19 @@ drawControlsOn: canvas
 			canvas fillColor: Color red do: [	canvas circleCenter: c radius: 1.5]] ]
 		! !
 
-!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 3/28/2023 20:57:39'!
+!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 3/31/2023 23:39:30'!
+drawMouseStrokesOn: canvas
+"Draw the line connecting the samples, for user comfort"	
+	mouseStrokes do: [:s | 
+		canvas fillColor: Color orange do: [ canvas circleCenter: s radius: 3]	].
+! !
+
+!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 3/31/2023 23:39:57'!
 drawOn: canvas
 	super drawOn: canvas.
-	canvas strokeWidth: 1 color: Color black do: [
-		"Draw the line connecting the samples, for user comfort"	
-		mouseStrokes ifNotEmpty: [ 
-			canvas moveTo: mouseStrokes first.
-			mouseStrokes allButFirstDo: [:s |	canvas lineTo: s]].
+	self showMouseStrokes ifTrue: [self drawMouseStrokesOn: canvas].
+	
+	canvas strokeWidth: 1 color: Color black do: [		
 		"Draw the strokes"
 		strokes do: [:s |
 			canvas moveTo: s start.
@@ -247,9 +279,7 @@ drawOn: canvas
 				ifNotNil: [canvas quadraticBezierTo: s end control: s control]]].
 	self showTangents ifTrue: [self drawTangentsOn: canvas ].
 	self showPoints ifTrue: [self drawPointsOn: canvas].
-	self showControls ifTrue: [self drawControlsOn: canvas]
-		
-		! !
+	self showControls ifTrue: [self drawControlsOn: canvas]	! !
 
 !PaperMorph methodsFor: 'drawing' stamp: 'hlsf 3/28/2023 20:14:30'!
 drawPointsOn: canvas
@@ -354,3 +384,19 @@ printOn: str
 		nextPutAll: (c ifNotNil: [c printShowingDecimalPlaces: 1] ifNil: ['nil'])
 	
 ! !
+
+!Collection methodsFor: '*Paper' stamp: 'hlsf 3/31/2023 22:22:27'!
+covariance: y
+	^ (self * y) sum / self size - (self mean * y mean)! !
+
+!Collection methodsFor: '*Paper' stamp: 'hlsf 3/31/2023 22:59:23'!
+regression: y
+"Linear regression (least-squares), return a, b of x->ax+b"
+	| a b |
+	a := (self covariance: y) / self variance.
+	b := y mean - (a * self mean).
+	^ Array with: a with: b! !
+
+!Collection methodsFor: '*Paper' stamp: 'hlsf 3/31/2023 22:01:21'!
+variance
+	^ self squared sum / self size - self mean squared! !
