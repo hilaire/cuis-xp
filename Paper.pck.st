@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5733] on 1 April 2023 at 4:59:21 pm'!
+'From Cuis 6.0 [latest update: #5733] on 1 April 2023 at 10:56:16 pm'!
 'Description '!
-!provides: 'Paper' 1 27!
+!provides: 'Paper' 1 29!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -34,18 +34,18 @@ Object subclass: #StrokeBezier2
 StrokeBezier2 class
 	instanceVariableNames: ''!
 
-!classDefinition: #StrokerC1 category: 'Paper'!
-Object subclass: #StrokerC1
-	instanceVariableNames: 'paper'
+!classDefinition: #Stroker category: 'Paper'!
+Object subclass: #Stroker
+	instanceVariableNames: 'paper strokes'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Paper'!
-!classDefinition: 'StrokerC1 class' category: 'Paper'!
-StrokerC1 class
+!classDefinition: 'Stroker class' category: 'Paper'!
+Stroker class
 	instanceVariableNames: ''!
 
 !classDefinition: #StrokerC0 category: 'Paper'!
-StrokerC1 subclass: #StrokerC0
+Stroker subclass: #StrokerC0
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -54,8 +54,18 @@ StrokerC1 subclass: #StrokerC0
 StrokerC0 class
 	instanceVariableNames: ''!
 
+!classDefinition: #StrokerC1 category: 'Paper'!
+Stroker subclass: #StrokerC1
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Paper'!
+!classDefinition: 'StrokerC1 class' category: 'Paper'!
+StrokerC1 class
+	instanceVariableNames: ''!
+
 !classDefinition: #StrokerRegressionC1 category: 'Paper'!
-StrokerC1 subclass: #StrokerRegressionC1
+Stroker subclass: #StrokerRegressionC1
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -76,7 +86,9 @@ StrokerRegressionC0 class
 
 
 !PaperMorph commentStamp: '<historical>' prior: 0!
-Try different scenarii to compute bezier curves parameters:
+(PaperMorph new stroker: Stroker ) openInWorld.
+
+Try different broken scenarii to compute bezier curves parameters:
 (PaperMorph new stroker: StrokerC1) openInWorld.  
 (PaperMorph new stroker: StrokerC0 ) openInWorld. <= seems better
 (PaperMorph new stroker: StrokerRegressionC1) openInWorld.
@@ -86,13 +98,15 @@ Try different scenarii to compute bezier curves parameters:
 !StrokeBezier2 commentStamp: '<historical>' prior: 0!
 A quadratic Bézier stroke!
 
-!StrokerC1 commentStamp: '<historical>' prior: 0!
-Given samples of mouse positions and previous strokes, I compute a new stroke. I can be subclassed to adjust my behavior.
-We have C1 continuity at the junction points between the strokes!
+!Stroker commentStamp: '<historical>' prior: 0!
+Given samples of mouse positions and previous strokes, I compute a new stroke. I can be subclassed to adjust my behavior.!
 
 !StrokerC0 commentStamp: '<historical>' prior: 0!
 We only have C0 continuity at the junction points between the strokes. 
 The tangents to the control point are computed at best using (S0S1) and (S(n-1)Sn) from the mouse samples!
+
+!StrokerC1 commentStamp: '<historical>' prior: 0!
+We have C1 continuity at the junction points between the strokes!
 
 !StrokerRegressionC1 commentStamp: '<historical>' prior: 0!
 In this scenario, the tangent line to the control point are computed by a linear regression from the samples.
@@ -115,9 +129,9 @@ samplesQty
 stroker: aStrokerClass
 	stroker := aStrokerClass on: self! !
 
-!PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:49:24'!
+!PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 22:36:02'!
 strokes
-	^ strokes! !
+	^ stroker strokes! !
 
 !PaperMorph methodsFor: 'accessing' stamp: 'hlsf 3/28/2023 20:24:48'!
 threshold
@@ -131,14 +145,14 @@ drawMouseStrokesOn: canvas
 		canvas fillColor: Color orange do: [ canvas circleCenter: s radius: 1]	].
 ! !
 
-!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 4/1/2023 16:13:44'!
+!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 4/1/2023 22:36:28'!
 drawOn: canvas
 	super drawOn: canvas.
 	self showMouseStrokes ifTrue: [self drawMouseStrokesOn: canvas].
-	canvas strokeWidth: 1.5 color: Color black do: [strokes do: [:s | s drawOn: canvas]].
-	self showTangents ifTrue: [strokes do: [:s | s drawTangentsOn: canvas]].
-	self showPoints ifTrue: [strokes do: [:s | s drawPointsOn: canvas]].
-	self showControls ifTrue: [strokes do: [:s | s drawControlsOn: canvas]]	! !
+	self strokes do: [:s | canvas strokeWidth: 1 color: Color black do: [ s drawOn: canvas]].
+	self showTangents ifTrue: [self strokes do: [:s | s drawTangentsOn: canvas]].
+	self showPoints ifTrue: [self strokes do: [:s | s drawPointsOn: canvas]].
+	self showControls ifTrue: [self strokes do: [:s | s drawControlsOn: canvas]]	! !
 
 !PaperMorph methodsFor: 'event handling testing' stamp: 'hlsf 3/23/2023 12:10:09'!
 handlesMouseDown: event
@@ -151,38 +165,39 @@ mouseButton1Down: event localPosition: localPosition
 	
 ! !
 
-!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/1/2023 14:26:20'!
+!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/1/2023 22:36:44'!
 mouseButton1Up: event localPosition: localPosition
 	samples add: localPosition.
 	"In case there is not enought sample, clone the last one"
 	self samplesQty - samples size timesRepeat: [	samples add: samples last].
-	strokes add: stroker newStroke.
-	self resetSamplingTo: nil
+	stroker newStroke.
+	self resetSamplingTo: nil.
+	self redrawNeeded 
 ! !
 
-!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/1/2023 14:26:43'!
+!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/1/2023 22:36:53'!
 mouseMove: event localPosition: localPosition
 	event mouseButton1Pressed not ifTrue: [^ self ].
 	(mousePositions isEmpty 
 	or: [(mousePositions last squaredDistanceTo: localPosition) > 4]) ifTrue: [
 		mousePositions add: localPosition].	
-	self redrawNeeded .
 	(samples last squaredDistanceTo: localPosition) > self threshold 		ifTrue: [	
 		samples add: localPosition.
 		samples size = self samplesQty			ifTrue: [
-			strokes add: stroker newStroke.
+			stroker newStroke.
 			self resetSamplingTo: localPosition]
-		]! !
+		].
+	self redrawNeeded! !
 
 !PaperMorph methodsFor: 'geometry testing' stamp: 'hlsf 3/23/2023 21:23:17'!
 requiresVectorCanvas
 	^ true! !
 
-!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/1/2023 14:27:19'!
+!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/1/2023 22:38:04'!
 initialize
 	super initialize.
 	extent := 400@400.
-	strokes := OrderedCollection new.
+	samples := OrderedCollection new.
 	mousePositions := OrderedCollection new.
 	pen := Pencil new color: Color black.
 	self color: Color white.
@@ -290,17 +305,17 @@ tangentsOnOff
 		toValue: self showTangents not.
 	self redrawNeeded ! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 13:05:16'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 22:37:57'!
 clearStrokes
 	self resetSamplingTo: nil.
 	mousePositions := OrderedCollection new. "To remove, see resetSampling: "
-	strokes := OrderedCollection new.
+	stroker clearStrokes.
 	self redrawNeeded ! !
 
-!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 13:06:01'!
+!PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/1/2023 21:01:59'!
 resetSamplingTo: aPoint
-	samples := OrderedCollection new.
-	"mousePositions := OrderedCollection new."
+	samples removeAll.
+	"mousePositions removeAll"
 	aPoint ifNotNil: [
 		samples add: aPoint.
 		mousePositions add: aPoint]
@@ -346,9 +361,17 @@ control
 end
 	^ p2! !
 
+!StrokeBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 22:44:40'!
+end: aPoint
+	 p2 := aPoint ! !
+
 !StrokeBezier2 methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 21:20:59'!
 start
 	^ p1! !
+
+!StrokeBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 22:44:51'!
+start: aPoint
+	p1 := aPoint ! !
 
 !StrokeBezier2 methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 20:58:52'!
 start: startPoint end: endPoint control: controlPoint
@@ -398,34 +421,89 @@ drawTangentsOn: canvas
 				canvas lineTo: c.
 				canvas lineTo: p2] ]! !
 
-!StrokerC1 methodsFor: 'instance' stamp: 'hlsf 4/1/2023 12:54:22'!
+!Stroker methodsFor: 'instance' stamp: 'hlsf 4/1/2023 22:44:01'!
 newStroke
-	^ StrokeBezier2 new
+	| newStroke lastStroke junctionPoint |
+	lastStroke := strokes ifEmpty: [nil] ifNotEmpty: [strokes last].
+	newStroke := StrokeBezier2 new
 		start: self samples first
 		end: self samples last
 		control: self controlPoint;
-		yourself! !
+		yourself.
+	strokes add: newStroke .
+	(lastStroke notNil and: [lastStroke end == newStroke start]) ifTrue: [	
+		junctionPoint := (lastStroke control + newStroke control) / 2.0.
+		lastStroke end: junctionPoint.
+		newStroke start: junctionPoint].
+	
+	! !
 
-!StrokerC1 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:32:38'!
+!Stroker methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 22:37:40'!
+clearStrokes
+	strokes removeAll! !
+
+!Stroker methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:32:38'!
 paper: aPaperMorph
 	paper := aPaperMorph ! !
 
-!StrokerC1 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:53:07'!
+!Stroker methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:53:07'!
 samples
 "samples used to compute a new stroke"
 	^ paper samples! !
 
-!StrokerC1 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:54:48'!
+!Stroker methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:54:48'!
 samplesQty
 "Quantity of samples used to compute a new stroke"
 	^ paper samplesQty! !
 
-!StrokerC1 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:49:42'!
+!Stroker methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 22:34:40'!
 strokes
 "Existing stroke in the paper morph"
-	^ paper strokes! !
+	^ strokes! !
 
-!StrokerC1 methodsFor: 'compute' stamp: 'hlsf 4/1/2023 13:00:44'!
+!Stroker methodsFor: 'compute' stamp: 'hlsf 4/1/2023 22:19:35'!
+controlPoint
+" Naively take the middle point in the samples collection 
+"
+	^ self samples middle
+! !
+
+!Stroker methodsFor: 'compute' stamp: 'hlsf 4/1/2023 22:34:59'!
+initialize
+	super initialize.
+	strokes := OrderedCollection new.! !
+
+!Stroker methodsFor: 'compute' stamp: 'hlsf 4/1/2023 12:56:11'!
+intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
+| det c1 c2 |
+	det := v1 crossProduct: v2.
+	det squared < 1e-8 ifTrue: [^ nil].
+	c1 := p1 crossProduct: v1.
+	c2 := p2 crossProduct: v2.
+	^ ((c2 * v1 x - (c1 * v2 x) ) / det) @ ((v1 y * c2 - (v2 y * c1)) / det)! !
+
+!Stroker class methodsFor: 'instance creation' stamp: 'hlsf 4/1/2023 14:29:08'!
+on: aPaperMorph
+	^ self new ::
+		paper: aPaperMorph ;
+		yourself! !
+
+!StrokerC0 methodsFor: 'as yet unclassified' stamp: 'hlsf 4/1/2023 16:11:18'!
+controlPoint
+" 
+	Compute the control point according to current and previous stroke. 
+	No rocket science here to compute the tangents to the control point: 
+	asume (S0S1) and (S(n-1)Sn) where S is the collection 	of mouse samples 
+"
+	| samples |
+	samples := self samples.
+	^ self
+		intersectionOrigin1: samples first
+		vector1: samples second - samples first
+		origin2: samples last
+		vector2: (samples atLast: 2) - samples last! !
+
+!StrokerC1 methodsFor: 'as yet unclassified' stamp: 'hlsf 4/1/2023 22:18:34'!
 controlPoint
 " 
 	Compute the control point according to current and previous stroke. 
@@ -449,36 +527,6 @@ controlPoint
 				vector1: samples second - samples first
 				origin2: samples last
 				vector2: (samples atLast: 2) - samples last ].! !
-
-!StrokerC1 methodsFor: 'compute' stamp: 'hlsf 4/1/2023 12:56:11'!
-intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
-| det c1 c2 |
-	det := v1 crossProduct: v2.
-	det squared < 1e-8 ifTrue: [^ nil].
-	c1 := p1 crossProduct: v1.
-	c2 := p2 crossProduct: v2.
-	^ ((c2 * v1 x - (c1 * v2 x) ) / det) @ ((v1 y * c2 - (v2 y * c1)) / det)! !
-
-!StrokerC1 class methodsFor: 'instance creation' stamp: 'hlsf 4/1/2023 14:29:08'!
-on: aPaperMorph
-	^ self new ::
-		paper: aPaperMorph ;
-		yourself! !
-
-!StrokerC0 methodsFor: 'as yet unclassified' stamp: 'hlsf 4/1/2023 16:11:18'!
-controlPoint
-" 
-	Compute the control point according to current and previous stroke. 
-	No rocket science here to compute the tangents to the control point: 
-	asume (S0S1) and (S(n-1)Sn) where S is the collection 	of mouse samples 
-"
-	| samples |
-	samples := self samples.
-	^ self
-		intersectionOrigin1: samples first
-		vector1: samples second - samples first
-		origin2: samples last
-		vector2: (samples atLast: 2) - samples last! !
 
 !StrokerRegressionC1 methodsFor: 'compute' stamp: 'hlsf 4/1/2023 15:34:39'!
 controlPoint
