@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5733] on 1 April 2023 at 4:19:12 pm'!
+'From Cuis 6.0 [latest update: #5733] on 1 April 2023 at 4:59:21 pm'!
 'Description '!
-!provides: 'Paper' 1 26!
+!provides: 'Paper' 1 27!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -74,6 +74,14 @@ StrokerRegressionC1 subclass: #StrokerRegressionC0
 StrokerRegressionC0 class
 	instanceVariableNames: ''!
 
+
+!PaperMorph commentStamp: '<historical>' prior: 0!
+Try different scenarii to compute bezier curves parameters:
+(PaperMorph new stroker: StrokerC1) openInWorld.  
+(PaperMorph new stroker: StrokerC0 ) openInWorld. <= seems better
+(PaperMorph new stroker: StrokerRegressionC1) openInWorld.
+(PaperMorph new stroker: StrokerRegressionC0 ) openInWorld.
+!
 
 !StrokeBezier2 commentStamp: '<historical>' prior: 0!
 A quadratic Bézier stroke!
