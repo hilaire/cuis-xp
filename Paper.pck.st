@@ -1,12 +1,12 @@
-'From Cuis 6.0 [latest update: #5733] on 2 April 2023 at 11:18:45 pm'!
+'From Cuis 6.0 [latest update: #5733] on 3 April 2023 at 9:25:23 pm'!
 'Description '!
-!provides: 'Paper' 1 33!
+!provides: 'Paper' 1 34!
 SystemOrganization addCategory: 'Paper'!
 
 
 !classDefinition: #PaperMorph category: 'Paper'!
 BoxedMorph subclass: #PaperMorph
-	instanceVariableNames: 'stroker pen samples sampleIndex'
+	instanceVariableNames: 'stroker pen samples sampleIndex currentStroke'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Paper'!
@@ -34,9 +34,19 @@ Bezier2Morph subclass: #Bezier3Morph
 Bezier3Morph class
 	instanceVariableNames: ''!
 
+!classDefinition: #CurrentStrokeMorph category: 'Paper'!
+Morph subclass: #CurrentStrokeMorph
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Paper'!
+!classDefinition: 'CurrentStrokeMorph class' category: 'Paper'!
+CurrentStrokeMorph class
+	instanceVariableNames: ''!
+
 !classDefinition: #Pencil category: 'Paper'!
 Object subclass: #Pencil
-	instanceVariableNames: 'color width position'
+	instanceVariableNames: 'color width'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Paper'!
@@ -81,9 +91,30 @@ A quadratic Bézier stroke!
 !Bezier3Morph commentStamp: '<historical>' prior: 0!
 A cubic Bézier stroke!
 
+!CurrentStrokeMorph commentStamp: '<historical>' prior: 0!
+In a PaperMorph I draw the current user stroke as connected straight lines. I request to Paper morph the current samples.
+I can only be owned by a Paper Morph.!
+
 !StrokerBezier2 commentStamp: '<historical>' prior: 0!
 Given samples of mouse positions and previous strokes, I compute a new Bézier quadratic stroke . 
 I can be subclassed to adjust my behavior.!
+
+!PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:34:01'!
+lastStroke
+" 	Return the last strokes added to the paper morph. 
+	#addMorph: adds submorph in the front (index = 1) as does detect 
+"
+	^ self submorphs detect: [: m| m is: #BezierMorph] ifNone: [nil]
+
+! !
+
+!PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:15:02'!
+pen
+	^ pen! !
+
+!PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:19:43'!
+sampleIndex
+	^ sampleIndex ! !
 
 !PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:54:30'!
 samples
@@ -105,22 +136,8 @@ threshold
 "Minimum squared distance between two consecutive samples"
 	^ self valueOfProperty: #threshold! !
 
-!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 4/2/2023 20:51:24'!
+!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 4/3/2023 20:33:04'!
 draw2On: canvas
-	super drawOn: canvas.
-	canvas strokeWidth: 1 color: Color black do: [
-		self strokes do: [:s |  s drawOn: canvas].
-		sampleIndex > 1 ifTrue: [
-			canvas moveTo: samples first.
-			2 to: sampleIndex - 1 do: [:i | canvas lineTo: (samples at: i)]
-		]	
-	].	
-	self showTangents ifTrue: [self strokes do: [:s | s drawTangentsOn: canvas]].
-	self showPoints ifTrue: [self strokes do: [:s | s drawPointsOn: canvas]].
-	self showControls ifTrue: [self strokes do: [:s | s drawControlsOn: canvas]]	! !
-
-!PaperMorph methodsFor: 'drawing' stamp: 'hlsf 4/2/2023 22:57:09'!
-drawOn: canvas
 	super drawOn: canvas.
 	canvas strokeWidth: 1 color: Color black do: [
 		sampleIndex > 1 ifTrue: [
@@ -141,18 +158,20 @@ mouseButton1Down: event localPosition: localPosition
 	
 ! !
 
-!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/2/2023 20:48:15'!
+!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/3/2023 20:40:41'!
 mouseButton1Up: event localPosition: localPosition
+	| stroke |
 	samples at: sampleIndex put: localPosition.
 	sampleIndex := sampleIndex + 1.
 	"In case there is not enought sample, clone the last one"
 	sampleIndex to: self samplesQty do: [	:i |		samples at: i put: localPosition].
-	self addMorph: stroker newStroke.
+	self addMorph: (stroke := stroker newStroke).
 	self resetSamplingTo: nil.
-	self redrawNeeded 
+	stroke redrawNeeded.
+	currentStroke redrawNeeded 
 ! !
 
-!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/2/2023 22:00:45'!
+!PaperMorph methodsFor: 'events' stamp: 'hlsf 4/3/2023 20:39:44'!
 mouseMove: event localPosition: localPosition
 	event mouseButton1Pressed not ifTrue: [^ self ].
 	((samples at: sampleIndex -1) squaredDistanceTo: localPosition) > self threshold 		ifTrue: [	
@@ -161,22 +180,25 @@ mouseMove: event localPosition: localPosition
 		sampleIndex > self samplesQty			ifTrue: [ |stroke|
 			self addMorph: (stroke := stroker newStroke).
 			stroke redrawNeeded.
-			self resetSamplingTo: localPosition.
-			"self redrawNeeded"]
-		].
+			self resetSamplingTo: localPosition].
+		currentStroke redrawNeeded.
+	].
 	! !
 
 !PaperMorph methodsFor: 'geometry testing' stamp: 'hlsf 3/23/2023 21:23:17'!
 requiresVectorCanvas
 	^ true! !
 
-!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/2/2023 22:47:42'!
+!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/3/2023 20:39:13'!
 initialize
 	super initialize.
 	extent := 400@400.
-	pen := Pencil new color: Color black.
+	pen := Pencil new ::
+		color: Color black; 
+		width: 1.5.
+	self addMorph: (currentStroke := CurrentStrokeMorph new).
 	self color: Color white.
-	self setProperty: #threshold toValue: 6 squared
+	self setProperty: #threshold toValue: 4 squared
 	! !
 
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/2/2023 21:30:54'!
@@ -314,9 +336,9 @@ printOn: str
 drawControlsOn: canvas
 	canvas fillColor: Color red do: [	canvas circleCenter: c1 radius: 1.5]! !
 
-!Bezier2Morph methodsFor: 'drawing' stamp: 'hlsf 4/2/2023 22:52:33'!
+!Bezier2Morph methodsFor: 'drawing' stamp: 'hlsf 4/3/2023 19:16:44'!
 drawOn: canvas
-	canvas strokeWidth: 1 color: Color black do: [
+	canvas strokeWidth: width color: color do: [
 		canvas moveTo: p1.
 		canvas quadraticBezierTo: p2 control: c1].
 	owner showControls ifTrue: [self drawControlsOn: canvas].
@@ -334,6 +356,10 @@ drawTangentsOn: canvas
 			canvas moveTo: p1.
 			canvas lineTo: c1.
 			canvas lineTo: p2]! !
+
+!Bezier2Morph methodsFor: 'testing' stamp: 'hlsf 4/3/2023 19:33:00'!
+is: aSymbol
+	^ aSymbol == #BezierMorph or: [ super is: aSymbol ]! !
 
 !Bezier3Morph methodsFor: 'accessing' stamp: 'hlsf 4/2/2023 14:35:57'!
 control2
@@ -364,9 +390,9 @@ drawControlsOn: canvas
 	super drawControlsOn: canvas.
 	canvas fillColor: Color red do: [	canvas circleCenter: c2 radius: 1.5]! !
 
-!Bezier3Morph methodsFor: 'drawing' stamp: 'hlsf 4/2/2023 22:50:19'!
+!Bezier3Morph methodsFor: 'drawing' stamp: 'hlsf 4/3/2023 19:16:55'!
 drawOn: canvas
-	canvas strokeWidth: 1 color: Color black do: [
+	canvas strokeWidth: width color: color do: [
 		canvas moveTo: p1.
 		c1 ifNil: [canvas lineTo: p2]	 ifNotNil: [canvas cubicBezierTo: p2 control1: c1 control2: c2]].
 	owner showControls ifTrue: [self drawControlsOn: canvas].
@@ -381,6 +407,18 @@ drawTangentsOn: canvas
 				canvas moveTo: p2.
 				canvas lineTo: c2] ! !
 
+!CurrentStrokeMorph methodsFor: 'drawing' stamp: 'hlsf 4/3/2023 20:41:27'!
+drawOn: canvas
+	| samples lastIndex |
+	owner class ~= PaperMorph ifTrue: [^ self].
+	samples := owner samples.
+	lastIndex := owner sampleIndex - 1.
+	canvas strokeWidth: owner pen width color: owner pen color do: [
+		lastIndex ifNotZero: [
+			canvas moveTo: owner samples first.
+			2 to: lastIndex do: [:i | canvas lineTo: ( samples at: i )] ] ].	
+! !
+
 !Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:10'!
 color
 	^ color! !
@@ -388,14 +426,6 @@ color
 !Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:01'!
 color: aColor
 	color := 	aColor ! !
-
-!Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:55'!
-position
-	^ position! !
-
-!Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:48'!
-position: aPoint
-	position := aPoint ! !
 
 !Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:17'!
 width
@@ -405,15 +435,16 @@ width
 width: aNumber
 	width := aNumber ! !
 
-!StrokerBezier2 methodsFor: 'instance' stamp: 'hlsf 4/2/2023 22:38:49'!
+!StrokerBezier2 methodsFor: 'instance' stamp: 'hlsf 4/3/2023 19:34:26'!
 newStroke
 	| newStroke lastStroke junctionPoint samples |
 	samples := self samples.
-	lastStroke := paper hasSubmorphs ifFalse: [nil] ifTrue: [paper firstSubmorph].
+	lastStroke := paper lastStroke.
 	newStroke := Bezier2Morph new
 		start: samples first
 		end: samples last
 		control1: samples second;
+		color: self color; width: self width;
 		yourself.
 	(lastStroke notNil and: [lastStroke end == newStroke start]) ifTrue: [	
 		junctionPoint := (lastStroke control1 + newStroke control1) / 2.0.
@@ -423,6 +454,10 @@ newStroke
 	^ newStroke
 	
 	! !
+
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:15:09'!
+color
+	^ paper pen color! !
 
 !StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:32:38'!
 paper: aPaperMorph
@@ -437,6 +472,10 @@ samples
 samplesQty
 "Quantity of samples used to compute a new stroke"
 	^ 3! !
+
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:15:17'!
+width
+	^ paper pen width! !
 
 !StrokerBezier2 methodsFor: 'compute' stamp: 'hlsf 4/1/2023 12:56:11'!
 intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
@@ -453,16 +492,17 @@ on: aPaperMorph
 		paper: aPaperMorph ;
 		yourself! !
 
-!StrokerBezier3 methodsFor: 'instance' stamp: 'hlsf 4/2/2023 22:49:08'!
+!StrokerBezier3 methodsFor: 'instance' stamp: 'hlsf 4/3/2023 19:34:37'!
 newStroke
 	| newStroke lastStroke junctionPoint samples |
 	samples := self samples.
-	lastStroke := paper hasSubmorphs ifFalse: [nil] ifTrue: [paper firstSubmorph].
+	lastStroke := paper lastStroke.
 	newStroke := Bezier3Morph new
 		start: samples first
 		end: samples last
 		control1: samples second
 		control2: samples third;
+		color: self color; width: self width;
 		yourself.
 	(lastStroke notNil and: [lastStroke end == newStroke start]) ifTrue: [	
 		junctionPoint := (lastStroke control2 + newStroke control1) / 2.0.
