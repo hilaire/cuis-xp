@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5733] on 8 April 2023 at 4:00:55 pm'!
+'From Cuis 6.0 [latest update: #5733] on 12 April 2023 at 5:38:08 pm'!
 'Description '!
-!provides: 'Paper' 1 38!
+!provides: 'Paper' 1 41!
 SystemOrganization addCategory: 'Paper'!
 
 
@@ -56,7 +56,7 @@ StrokeGroupMorph class
 
 !classDefinition: #Pencil category: 'Paper'!
 Object subclass: #Pencil
-	instanceVariableNames: 'color width threshold'
+	instanceVariableNames: 'color width adjustWidth threshold'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Paper'!
@@ -113,11 +113,17 @@ In some circumstance, I reveal my submorphs and then I do not draw them directly
 
 !Pencil commentStamp: '<historical>' prior: 0!
 Depending on the use of the pen, we have different threshold
+- color : color of the pen, including transparent color
+- width: standard fixed width
+- adjustWidth: does the width depends on the speed/pressure of the pen
 - threshold : the minimum squared distance between two stroke with paper morph at scale 1!
 
 !StrokerBezier2 commentStamp: '<historical>' prior: 0!
 Given samples of mouse positions and previous strokes, I compute a new Bézier quadratic stroke . 
 I can be subclassed to adjust my behavior.!
+
+!StrokerBezier3 commentStamp: '<historical>' prior: 0!
+Compute a cubic Bézier curve.!
 
 !PaperMorph methodsFor: 'accessing' stamp: 'hlsf 4/8/2023 12:08:53'!
 lastStroke
@@ -200,27 +206,41 @@ mouseMove: event localPosition: localPosition
 requiresVectorCanvas
 	^ true! !
 
-!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/8/2023 15:39:01'!
+!PaperMorph methodsFor: 'initialization' stamp: 'hlsf 4/11/2023 09:16:34'!
 initialize
 	super initialize.
 	extent := 400@400.
 	pen := Pencil new ::
 		color: Color black;
 		width: 3;
+		adjustWidth: false;
 		threshold: 4 squared.
 	self 
 		addMorph: (lineStrokes := LineStrokeMorph new);
 		color: Color white.! !
 
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/7/2023 13:51:44'!
+!PaperMorph methodsFor: 'testing' stamp: 'hlsf 3/27/2023 21:48:57'!
+showControls
+	^ self valueOfProperty: #showControls ifAbsent: [false]! !
+
+!PaperMorph methodsFor: 'testing' stamp: 'hlsf 3/27/2023 21:48:31'!
+showPoints
+	^ self valueOfProperty: #showPoints ifAbsent: [false]! !
+
+!PaperMorph methodsFor: 'testing' stamp: 'hlsf 3/27/2023 21:47:26'!
+showTangents
+	^ self valueOfProperty: #showTangents ifAbsent: [false]! !
+
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/11/2023 09:14:48'!
 addStandardHaloMenuItemsTo: aCustomMenu hand: aHandMorph
 	aCustomMenu 
 		add: 'sampling threshold' action: #setThreshold;
 		add: 'width' action: #setWidth;
-		add: 'color' action: #setColor;
-		addUpdating: #showPointsString action: #pointsOnOff;
-		addUpdating: #showControlsString action: #controlsOnOff;
-		addUpdating: #showTangentsString action: #tangentsOnOff;
+		addUpdating: #adjustWidthString target: pen action: #adjustWidthOnOff;
+		add: 'color' action: #setColor;		
+		addUpdating: #pointsString action: #pointsOnOff;
+		addUpdating: #controlsString action: #controlsOnOff;
+		addUpdating: #tangentsString action: #tangentsOnOff;
 		add: 'clear' action: #removeAllMorphs! !
 
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:52:11'!
@@ -230,12 +250,22 @@ controlsOnOff
 		toValue: self showControls not.
 	self redrawNeeded ! !
 
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/11/2023 09:12:39'!
+controlsString
+	^ self showControls asMenuItemTextPrefix , 
+		'show controls'! !
+
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:52:05'!
 pointsOnOff
 	self 
 		setProperty: #showPoints
 		toValue: self showPoints not.
 	self redrawNeeded ! !
+
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/11/2023 09:12:54'!
+pointsString
+	^ self showPoints asMenuItemTextPrefix , 
+		'show points'! !
 
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/7/2023 14:02:13'!
 setColor
@@ -270,39 +300,17 @@ setWidth
 			(theWidth notNil and: [theWidth >0 and: [theWidth <= 20] ]) 	ifTrue: [
 				pen width: theWidth ] ]! !
 
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:57'!
-showControls
-	^ self valueOfProperty: #showControls ifAbsent: [false]! !
-
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:50'!
-showControlsString
-	^ self showControls asMenuItemTextPrefix , 
-		'show controls'! !
-
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:31'!
-showPoints
-	^ self valueOfProperty: #showPoints ifAbsent: [false]! !
-
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:24'!
-showPointsString
-	^ self showPoints asMenuItemTextPrefix , 
-		'show points'! !
-
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:47:26'!
-showTangents
-	^ self valueOfProperty: #showTangents ifAbsent: [false]! !
-
-!PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:48:06'!
-showTangentsString
-	^ self showTangents asMenuItemTextPrefix , 
-		'show tangents'! !
-
 !PaperMorph methodsFor: 'menus' stamp: 'hlsf 3/27/2023 21:52:18'!
 tangentsOnOff
 	self 
 		setProperty: #showTangents
 		toValue: self showTangents not.
 	self redrawNeeded ! !
+
+!PaperMorph methodsFor: 'menus' stamp: 'hlsf 4/11/2023 09:13:03'!
+tangentsString
+	^ self showTangents asMenuItemTextPrefix , 
+		'show tangents'! !
 
 !PaperMorph methodsFor: 'strokes' stamp: 'hlsf 4/8/2023 11:45:22'!
 resetSamplingTo: aPoint
@@ -312,6 +320,10 @@ resetSamplingTo: aPoint
 		samples at: 1 put: aPoint.
 		sampleIndex := sampleIndex + 1]
 ! !
+
+!PaperMorph methodsFor: 'as yet unclassified' stamp: 'hlsf 4/11/2023 09:57:20'!
+drawOn: canvas
+	super drawOn: canvas.! !
 
 !Bezier2Morph methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:51:46'!
 color
@@ -530,6 +542,18 @@ width: aNumber
 	submorphs do: [:each | each width: aNumber ].
 	self redrawNeeded ! !
 
+!Pencil methodsFor: 'accessing' stamp: 'hlsf 4/11/2023 09:04:47'!
+adjustWidth
+	^ adjustWidth ! !
+
+!Pencil methodsFor: 'accessing' stamp: 'hlsf 4/11/2023 09:04:56'!
+adjustWidth: boolean
+	adjustWidth := boolean ! !
+
+!Pencil methodsFor: 'accessing' stamp: 'hlsf 4/11/2023 09:09:31'!
+adjustWidthOnOff
+	adjustWidth := adjustWidth not! !
+
 !Pencil methodsFor: 'accessing' stamp: 'hlsf 3/23/2023 14:50:10'!
 color
 	^ color! !
@@ -554,7 +578,11 @@ width
 width: aNumber
 	width := aNumber ! !
 
-!StrokerBezier2 methodsFor: 'instance' stamp: 'hlsf 4/3/2023 19:34:26'!
+!Pencil methodsFor: 'user interface' stamp: 'hlsf 4/11/2023 09:15:50'!
+adjustWidthString
+	^ adjustWidth asMenuItemTextPrefix , 		'adjust width'! !
+
+!StrokerBezier2 methodsFor: 'instance' stamp: 'hlsf 4/9/2023 11:35:26'!
 newStroke
 	| newStroke lastStroke junctionPoint samples |
 	samples := self samples.
@@ -563,7 +591,8 @@ newStroke
 		start: samples first
 		end: samples last
 		control1: samples second;
-		color: self color; width: self width;
+		color: self penColor; 
+		width: (self widthFor: samples prev: lastStroke);
 		yourself.
 	(lastStroke notNil and: [lastStroke end == newStroke start]) ifTrue: [	
 		junctionPoint := (lastStroke control1 + newStroke control1) / 2.0.
@@ -574,13 +603,25 @@ newStroke
 	
 	! !
 
-!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:15:09'!
-color
-	^ paper pen color! !
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/11/2023 09:17:13'!
+adjustWidth
+	^ paper pen adjustWidth ! !
 
 !StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:32:38'!
 paper: aPaperMorph
 	paper := aPaperMorph ! !
+
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/9/2023 11:36:11'!
+penColor
+	^ paper pen color! !
+
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/12/2023 17:21:08'!
+penThreshold
+	^ paper pen threshold ! !
+
+!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/9/2023 11:36:18'!
+penWidth
+	^ paper pen width! !
 
 !StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/1/2023 12:53:07'!
 samples
@@ -592,9 +633,13 @@ samplesQty
 "Quantity of samples used to compute a new stroke"
 	^ 3! !
 
-!StrokerBezier2 methodsFor: 'accessing' stamp: 'hlsf 4/3/2023 19:15:17'!
-width
-	^ paper pen width! !
+!StrokerBezier2 methodsFor: 'compute' stamp: 'hlsf 4/9/2023 10:25:47'!
+averageDistance: samples
+	| dist |
+	dist := 0.
+	1 to: samples size -1 do: [:i |
+		dist := dist + ( (samples at: i) dist: (samples at: i + 1) )].
+	^ dist / (samples size - 1)! !
 
 !StrokerBezier2 methodsFor: 'compute' stamp: 'hlsf 4/1/2023 12:56:11'!
 intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
@@ -605,13 +650,38 @@ intersectionOrigin1: p1 vector1: v1 origin2: p2 vector2: v2
 	c2 := p2 crossProduct: v2.
 	^ ((c2 * v1 x - (c1 * v2 x) ) / det) @ ((v1 y * c2 - (v2 y * c1)) / det)! !
 
+!StrokerBezier2 methodsFor: 'compute' stamp: 'hlsf 4/12/2023 17:28:57'!
+maxDistance: samples
+	| dist |
+	dist := Array new: samples size - 1.
+	1 to: samples size -1 do: [:i |
+		dist at: i put: ( (samples at: i) dist: (samples at: i + 1) )].
+	^ dist max! !
+
+!StrokerBezier2 methodsFor: 'compute' stamp: 'hlsf 4/12/2023 17:34:53'!
+widthFor: samples prev: lastStroke
+	| penWidth prevWidth strokeDist min max f a b  | 
+	penWidth := self penWidth.
+	self adjustWidth ifFalse: [^penWidth ].
+	prevWidth := lastStroke ifNotNil: [lastStroke width] ifNil: [penWidth].
+	"min/max pixel distance between two samples"
+	min := self penThreshold / 2.
+	max := self penThreshold * 2. 
+	"+/- f % of amplitude width"
+	f := 0.30.
+	" affine parameters "
+	a := (2 * penWidth * f) / ( min - max).
+	b :=  penWidth * (1 + f) - (min * a).
+	strokeDist := (self maxDistance: samples) min: max max: min.
+	^ (a * strokeDist + b) * 0.6 + (prevWidth * 0.4)! !
+
 !StrokerBezier2 class methodsFor: 'instance creation' stamp: 'hlsf 4/1/2023 14:29:08'!
 on: aPaperMorph
 	^ self new ::
 		paper: aPaperMorph ;
 		yourself! !
 
-!StrokerBezier3 methodsFor: 'instance' stamp: 'hlsf 4/3/2023 19:34:37'!
+!StrokerBezier3 methodsFor: 'instance' stamp: 'hlsf 4/9/2023 12:17:41'!
 newStroke
 	| newStroke lastStroke junctionPoint samples |
 	samples := self samples.
@@ -621,7 +691,8 @@ newStroke
 		end: samples last
 		control1: samples second
 		control2: samples third;
-		color: self color; width: self width;
+		color: self penColor; 
+		width:  (self widthFor: samples prev: lastStroke);
 		yourself.
 	(lastStroke notNil and: [lastStroke end == newStroke start]) ifTrue: [	
 		junctionPoint := (lastStroke control2 + newStroke control1) / 2.0.
