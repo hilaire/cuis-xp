@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5799] on 21 May 2023 at 10:45:33 pm'!
+'From Cuis 6.0 [latest update: #5799] on 22 May 2023 at 10:23:47 pm'!
 'Description '!
-!provides: 'Dyna' 1 0!
+!provides: 'Dyna' 1 2!
 SystemOrganization addCategory: 'Dyna'!
 
 
@@ -140,7 +140,9 @@ It describes a class: its number, the list of its students, taught courses, etc.
 It is useful for the teacher and student to describe all of their courses.!
 
 !DyBCourseHour commentStamp: '<historical>' prior: 0!
-Describes one or more contiguous teaching periods.!
+Describes one or more contiguous teaching periods.
+
+timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
 
 !DyBStudent commentStamp: '<historical>' prior: 0!
 - classGroup: the class the student belong to!
@@ -162,3 +164,58 @@ A binder contains the pedagogical materials related to a given course.
 
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
+
+!DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 5/22/2023 20:08:23'!
+mold
+	| mold start |
+	mold := Mold new.
+	mold stringField
+		label: 'Name' translated;
+		on: #slotName of: self;
+		beRequired.
+	(start := mold timeField)
+		label: 'Start time' translated;
+		example: '8:35';
+		on: #start of: self;
+		beRequired.
+	mold timeField 
+		label: 'End time' translated;
+		on: #end of: self;
+		addCondition: [:input :value | input isEmptyOrNil or: [value > start value ] ]
+			labeled: 'End time can''t preced start time.' translated.
+	^ mold
+	! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:55'!
+end
+	^ endTime! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 20:01:48'!
+end: aTime
+	endTime := aTime! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:11'!
+slotName
+	^ name! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 20:02:10'!
+slotName: aString
+	name := 	aString ! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:56:55'!
+start
+	^ startTime ! !
+
+!DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 20:01:59'!
+start: aTime
+	startTime := aTime ! !
+
+!DyBTimeSlot methodsFor: 'printing' stamp: 'hlsf 5/22/2023 22:04:28'!
+printOn: aStream
+	name ifNil: [ super printOn: aStream ]
+		ifNotNil: [	
+			aStream nextPutAll: name;
+				space;
+				nextPutAll: startTime hhmm24 ;
+				nextPut: $-;
+				nextPutAll: endTime hhmm24 ]! !
