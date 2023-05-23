@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5799] on 22 May 2023 at 10:23:47 pm'!
+'From Cuis 6.0 [latest update: #5799] on 23 May 2023 at 9:05:14 pm'!
 'Description '!
-!provides: 'Dyna' 1 2!
+!provides: 'Dyna' 1 3!
 SystemOrganization addCategory: 'Dyna'!
 
 
@@ -22,6 +22,16 @@ Object subclass: #DyBApp
 	category: 'Dyna'!
 !classDefinition: 'DyBApp class' category: 'Dyna'!
 DyBApp class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBAssignment category: 'Dyna'!
+Object subclass: #DyBAssignment
+	instanceVariableNames: 'date timeSlot task'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna'!
+!classDefinition: 'DyBAssignment class' category: 'Dyna'!
+DyBAssignment class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBClassGroup category: 'Dyna'!
@@ -86,7 +96,7 @@ DyBTeacher class
 
 !classDefinition: #DyBSchool category: 'Dyna'!
 Object subclass: #DyBSchool
-	instanceVariableNames: 'name phone email timeSlots subject classGroups'
+	instanceVariableNames: 'name phone email timeSlots subjects classGroups'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dyna'!
@@ -126,18 +136,24 @@ DyTopic class
 
 
 !DyBAgenda commentStamp: '<historical>' prior: 0!
-The place to record teacher assignments or other events. It follows the user times slots as describe in its attached school instance
+The place to record teacher/student assignments or other events. It follows the user times slots as described in its related school instances
 !
 
 !DyBApp commentStamp: '<historical>' prior: 0!
-- user may be a DBTeacher or DBStudent!
+- user: a teacher or student 
+- schools: collection of schools the student is enrolled in or the teacher teaches in
+- agenda of the user!
 
 !DyBClassGroup commentStamp: '<historical>' prior: 0!
 It describes a class: its number, the list of its students, taught courses, etc.
 !
 
 !DyBCourse commentStamp: '<historical>' prior: 0!
-It is useful for the teacher and student to describe all of their courses.!
+I describe a course of a teacher or a course attended by a student:
+- subject: the taught topic (Math, History,...)
+- color: distinctive color of the course
+- courseHours: a collection of course hour describing the teaching period
+- binder: a holder of the pedagogical documents!
 
 !DyBCourseHour commentStamp: '<historical>' prior: 0!
 Describes one or more contiguous teaching periods.
@@ -164,6 +180,92 @@ A binder contains the pedagogical materials related to a given course.
 
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
+
+!DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:46:38'!
+initialize
+	super initialize.
+	assignments := OrderedCollection new! !
+
+!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:47:11'!
+initialize
+	super initialize.
+	schools := OrderedCollection new! !
+
+!DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
+initialize
+	super initialize.
+	courseHours := OrderedCollection new! !
+
+!DyBPerson methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:30'!
+isStudent
+	^ false! !
+
+!DyBPerson methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:25'!
+isTeacher
+	^ false! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:36:00'!
+email
+	^ email! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:49'!
+email: aString
+	email := 	aString ! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:38'!
+firstName
+	^ firstName! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:31'!
+firstName: aString
+	firstName := 	aString ! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:12'!
+lastName
+	^ lastName ! !
+
+!DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:24'!
+lastName: aString
+	lastName := 	aString ! !
+
+!DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
+isStudent
+	^ true! !
+
+!DyBTeacher methodsFor: 'as yet unclassified' stamp: 'hlsf 5/23/2023 20:18:52'!
+isTeacher
+	^ true! !
+
+!DyBSchool methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:44:06'!
+initialize
+	super initialize .
+	timeSlots := OrderedCollection new.
+	subjects := OrderedCollection new.
+	classGroups := OrderedCollection new! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:35'!
+email
+	^ email! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:30'!
+email: aString
+	email := aString ! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:08'!
+phone
+	^ phone! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:19'!
+phone: aString
+	phone := aString ! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:54:57'!
+schoolName
+	^ name! !
+
+!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:54:48'!
+schoolName: aString
+	name := aString ! !
 
 !DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 5/22/2023 20:08:23'!
 mold
