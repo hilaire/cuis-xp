@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 4:58:58 pm'!
+'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 9:08:08 pm'!
 'Description '!
-!provides: 'Dyna' 1 7!
+!provides: 'Dyna' 1 8!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -193,9 +193,10 @@ initialize
 	schools := OrderedCollection new.
 	user := DyBTeacher new.! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:56:11'!
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/29/2023 20:57:04'!
 editor
-	| pane listMorph schoolsList quickButtons |
+	| pane decoratedSchool listMorph schoolsList quickButtons |
+	decoratedSchool := nil.
 	pane := LayoutMorph newColumn.
 	pane addMorph: (DecoratedPane open: user mold newPane label: 'User' translated).
 	listMorph := PluggableListMorph 
@@ -203,8 +204,22 @@ editor
 		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
 	quickButtons := Array new: 3.
 	quickButtons at:1 put: (PluggableButtonMorph 
-		model: [(schools add: DyBSchool new) mold openDialog: 'Add school' translated. 
-			schoolsList changed: #list] 
+		model: [ | newSchool addMold addPane |
+			newSchool := DyBSchool new.
+			addMold := newSchool mold.
+			addPane := addMold newPane.
+			addPane 
+				actionOnAccept: [
+					 addMold validate.
+					addMold isValid ifTrue: [
+						addMold save.
+						schools add: newSchool.
+						decoratedSchool replaceSubmorph: addPane by: listMorph.
+						schoolsList changed: #list]
+					];
+				actionOnCancel: [decoratedSchool replaceSubmorph: addPane by: listMorph]; 
+				buildMorphicWindow.
+			decoratedSchool replaceSubmorph: listMorph by: addPane ] 
 		action: #value ::
 		icon: Theme current listAddIcon;
 		setBalloonText: 'Add a new school' translated;
@@ -225,7 +240,7 @@ editor
 		icon: Theme current deleteIcon ;
 		setBalloonText: 'Delete the selected school' translated;
 		yourself).	
-	pane addMorph:(DecoratedPane 
+	pane addMorph:(decoratedSchool := DecoratedPane 
 		open: listMorph 
 		label: 'Schools' translated 
 		quickButtons: quickButtons).
