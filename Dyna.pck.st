@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 1:01:27 pm'!
+'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 4:58:58 pm'!
 'Description '!
-!provides: 'Dyna' 1 5!
+!provides: 'Dyna' 1 7!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -187,34 +187,49 @@ initialize
 	super initialize.
 	assignments := OrderedCollection new! !
 
-!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:47:11'!
+!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
 	super initialize.
-	schools := OrderedCollection new! !
+	schools := OrderedCollection new.
+	user := DyBTeacher new.! !
 
-!DyBApp methodsFor: 'as yet unclassified' stamp: 'hlsf 5/29/2023 13:00:26'!
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:56:11'!
 editor
 	| pane listMorph schoolsList quickButtons |
 	pane := LayoutMorph newColumn.
-	pane addMorph: (DecoratedPane open: user mold label: 'User' translated).
+	pane addMorph: (DecoratedPane open: user mold newPane label: 'User' translated).
 	listMorph := PluggableListMorph 
 		model: (schoolsList := ListModel with: schools)		
 		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
 	quickButtons := Array new: 3.
 	quickButtons at:1 put: (PluggableButtonMorph 
-		model: [schools add: DyBSchool new. schoolsList changed: #list] 
+		model: [(schools add: DyBSchool new) mold openDialog: 'Add school' translated. 
+			schoolsList changed: #list] 
 		action: #value ::
 		icon: Theme current listAddIcon;
 		setBalloonText: 'Add a new school' translated;
 		yourself).
-	quickButtons at:2 put: (PluggableButtonMorph model: [] action: #value ::
+	quickButtons at:2 put: (PluggableButtonMorph 
+		model: [schoolsList listIndex ifNotZero: [
+			schoolsList selectedItem mold openDialog: 'Edit school' translated.	
+			schoolsList changed: #list	] ]
+		action: #value ::
 		icon: Theme current textEditorIcon ;
 		setBalloonText: 'Edit the selected school' translated;
 		yourself).
-	quickButtons at:2 put: (PluggableButtonMorph model: [] action: #value ::
+	quickButtons at:3 put: (PluggableButtonMorph 
+		model: [schoolsList listIndex ifNotZero: [
+			schools remove: schoolsList selectedItem.
+			schoolsList changed: #list	] ] 
+		action: #value ::
 		icon: Theme current deleteIcon ;
 		setBalloonText: 'Delete the selected school' translated;
-		yourself).	! !
+		yourself).	
+	pane addMorph:(DecoratedPane 
+		open: listMorph 
+		label: 'Schools' translated 
+		quickButtons: quickButtons).
+	^ pane! !
 
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
@@ -262,7 +277,7 @@ printOn: str
 			space;
 			nextPutAll: lastName]! !
 
-!DyBPerson methodsFor: 'ui' stamp: 'hlsf 5/29/2023 11:43:46'!
+!DyBPerson methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:55:56'!
 mold
 	| mold |
 	mold := Mold new.
@@ -278,7 +293,7 @@ mold
 		label: 'Email' translated;
 		on: #email of: self;
 		beRequired.
-	^ mold newPane! !
+	^ mold! !
 
 !DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
 isStudent
@@ -318,6 +333,27 @@ schoolName
 !DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:54:48'!
 schoolName: aString
 	name := aString ! !
+
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:55:51'!
+mold
+	| mold |
+	mold := Mold new.
+	mold stringField
+		label: 'School name' translated;
+		on: #schoolName of: self;
+		beRequired.
+	mold stringField
+		label: 'Phone' translated;
+		on: #phone of: self.
+	mold stringField
+		label: 'Email' translated;
+		on: #email of: self.
+	^ mold! !
+
+!DyBSchool methodsFor: 'printing' stamp: 'hlsf 5/29/2023 16:57:29'!
+printOn: str
+	name ifNil: [super printOn: str] 
+		ifNotNil: [	str nextPutAll: name]! !
 
 !DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 5/22/2023 20:08:23'!
 mold
