@@ -1,136 +1,137 @@
-'From Cuis 6.0 [latest update: #5799] on 23 May 2023 at 9:05:14 pm'!
+'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 1:01:27 pm'!
 'Description '!
-!provides: 'Dyna' 1 3!
+!provides: 'Dyna' 1 5!
 SystemOrganization addCategory: 'Dyna'!
+SystemOrganization addCategory: 'Dyna-Core'!
 
 
-!classDefinition: #DyBAgenda category: 'Dyna'!
+!classDefinition: #DyBAgenda category: 'Dyna-Core'!
 Object subclass: #DyBAgenda
 	instanceVariableNames: 'start end daysOff assignments'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBAgenda class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBAgenda class' category: 'Dyna-Core'!
 DyBAgenda class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBApp category: 'Dyna'!
+!classDefinition: #DyBApp category: 'Dyna-Core'!
 Object subclass: #DyBApp
 	instanceVariableNames: 'user schools agenda'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBApp class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBApp class' category: 'Dyna-Core'!
 DyBApp class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBAssignment category: 'Dyna'!
+!classDefinition: #DyBAssignment category: 'Dyna-Core'!
 Object subclass: #DyBAssignment
 	instanceVariableNames: 'date timeSlot task'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBAssignment class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBAssignment class' category: 'Dyna-Core'!
 DyBAssignment class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBClassGroup category: 'Dyna'!
+!classDefinition: #DyBClassGroup category: 'Dyna-Core'!
 Object subclass: #DyBClassGroup
 	instanceVariableNames: 'number headTeacher students courses'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBClassGroup class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBClassGroup class' category: 'Dyna-Core'!
 DyBClassGroup class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBCourse category: 'Dyna'!
+!classDefinition: #DyBCourse category: 'Dyna-Core'!
 Object subclass: #DyBCourse
 	instanceVariableNames: 'subject color teacher courseHours binder'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBCourse class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBCourse class' category: 'Dyna-Core'!
 DyBCourse class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBCourseHour category: 'Dyna'!
+!classDefinition: #DyBCourseHour category: 'Dyna-Core'!
 Object subclass: #DyBCourseHour
 	instanceVariableNames: 'room dayOfWeek timeSlots'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBCourseHour class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBCourseHour class' category: 'Dyna-Core'!
 DyBCourseHour class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBPerson category: 'Dyna'!
+!classDefinition: #DyBPerson category: 'Dyna-Core'!
 Object subclass: #DyBPerson
 	instanceVariableNames: 'lastName firstName email'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBPerson class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBPerson class' category: 'Dyna-Core'!
 DyBPerson class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBStudent category: 'Dyna'!
+!classDefinition: #DyBStudent category: 'Dyna-Core'!
 DyBPerson subclass: #DyBStudent
 	instanceVariableNames: 'classGroup'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBStudent class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBStudent class' category: 'Dyna-Core'!
 DyBStudent class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBTeacher category: 'Dyna'!
+!classDefinition: #DyBTeacher category: 'Dyna-Core'!
 DyBPerson subclass: #DyBTeacher
 	instanceVariableNames: 'classGroups'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBTeacher class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBTeacher class' category: 'Dyna-Core'!
 DyBTeacher class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBSchool category: 'Dyna'!
+!classDefinition: #DyBSchool category: 'Dyna-Core'!
 Object subclass: #DyBSchool
 	instanceVariableNames: 'name phone email timeSlots subjects classGroups'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBSchool class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBSchool class' category: 'Dyna-Core'!
 DyBSchool class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBTimeSlot category: 'Dyna'!
+!classDefinition: #DyBTimeSlot category: 'Dyna-Core'!
 Object subclass: #DyBTimeSlot
 	instanceVariableNames: 'name startTime endTime'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBTimeSlot class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBTimeSlot class' category: 'Dyna-Core'!
 DyBTimeSlot class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBinder category: 'Dyna'!
+!classDefinition: #DyBinder category: 'Dyna-Core'!
 Object subclass: #DyBinder
 	instanceVariableNames: 'topics last resources'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyBinder class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBinder class' category: 'Dyna-Core'!
 DyBinder class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyTopic category: 'Dyna'!
+!classDefinition: #DyTopic category: 'Dyna-Core'!
 Object subclass: #DyTopic
 	instanceVariableNames: 'title color documents'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Dyna'!
-!classDefinition: 'DyTopic class' category: 'Dyna'!
+	category: 'Dyna-Core'!
+!classDefinition: 'DyTopic class' category: 'Dyna-Core'!
 DyTopic class
 	instanceVariableNames: ''!
 
@@ -191,6 +192,30 @@ initialize
 	super initialize.
 	schools := OrderedCollection new! !
 
+!DyBApp methodsFor: 'as yet unclassified' stamp: 'hlsf 5/29/2023 13:00:26'!
+editor
+	| pane listMorph schoolsList quickButtons |
+	pane := LayoutMorph newColumn.
+	pane addMorph: (DecoratedPane open: user mold label: 'User' translated).
+	listMorph := PluggableListMorph 
+		model: (schoolsList := ListModel with: schools)		
+		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
+	quickButtons := Array new: 3.
+	quickButtons at:1 put: (PluggableButtonMorph 
+		model: [schools add: DyBSchool new. schoolsList changed: #list] 
+		action: #value ::
+		icon: Theme current listAddIcon;
+		setBalloonText: 'Add a new school' translated;
+		yourself).
+	quickButtons at:2 put: (PluggableButtonMorph model: [] action: #value ::
+		icon: Theme current textEditorIcon ;
+		setBalloonText: 'Edit the selected school' translated;
+		yourself).
+	quickButtons at:2 put: (PluggableButtonMorph model: [] action: #value ::
+		icon: Theme current deleteIcon ;
+		setBalloonText: 'Delete the selected school' translated;
+		yourself).	! !
+
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
 	super initialize.
@@ -227,6 +252,33 @@ lastName
 !DyBPerson methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:35:24'!
 lastName: aString
 	lastName := 	aString ! !
+
+!DyBPerson methodsFor: 'printing' stamp: 'hlsf 5/28/2023 18:00:55'!
+printOn: str
+	(firstName isNil or: [lastName isNil])
+		ifTrue: [super printOn: str] 
+		ifFalse: [ 
+			str nextPutAll: firstName;
+			space;
+			nextPutAll: lastName]! !
+
+!DyBPerson methodsFor: 'ui' stamp: 'hlsf 5/29/2023 11:43:46'!
+mold
+	| mold |
+	mold := Mold new.
+	mold stringField
+		label: 'Firstname' translated;
+		on: #firstName of: self;
+		beRequired.
+	mold stringField
+		label: 'Lastname' translated;
+		on: #lastName of: self;
+		beRequired.
+	mold stringField
+		label: 'Email' translated;
+		on: #email of: self;
+		beRequired.
+	^ mold newPane! !
 
 !DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
 isStudent
