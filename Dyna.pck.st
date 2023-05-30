@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5816] on 29 May 2023 at 9:08:08 pm'!
+'From Cuis 6.0 [latest update: #5816] on 30 May 2023 at 9:33:30 pm'!
 'Description '!
-!provides: 'Dyna' 1 8!
+!provides: 'Dyna' 1 9!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -193,58 +193,133 @@ initialize
 	schools := OrderedCollection new.
 	user := DyBTeacher new.! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/29/2023 20:57:04'!
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:29:37'!
 editor
-	| pane decoratedSchool listMorph schoolsList quickButtons |
-	decoratedSchool := nil.
+	| pane decoratedSchool listMorph quickButtons |
+	listMorph := PluggableListMorph 
+		model: (ListModel with: schools)		
+		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
+	decoratedSchool := DecoratedPane open: listMorph label: 'Schools' translated.
 	pane := LayoutMorph newColumn.
 	pane addMorph: (DecoratedPane open: user mold newPane label: 'User' translated).
-	listMorph := PluggableListMorph 
-		model: (schoolsList := ListModel with: schools)		
-		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
 	quickButtons := Array new: 3.
 	quickButtons at:1 put: (PluggableButtonMorph 
-		model: [ | newSchool addMold addPane |
-			newSchool := DyBSchool new.
-			addMold := newSchool mold.
-			addPane := addMold newPane.
-			addPane 
-				actionOnAccept: [
-					 addMold validate.
-					addMold isValid ifTrue: [
-						addMold save.
-						schools add: newSchool.
-						decoratedSchool replaceSubmorph: addPane by: listMorph.
-						schoolsList changed: #list]
-					];
-				actionOnCancel: [decoratedSchool replaceSubmorph: addPane by: listMorph]; 
-				buildMorphicWindow.
-			decoratedSchool replaceSubmorph: listMorph by: addPane ] 
-		action: #value ::
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickAdd: 
+		actionArgument: (Array with: DyBSchool with: decoratedSchool with: listMorph)
+		label: nil ::
 		icon: Theme current listAddIcon;
 		setBalloonText: 'Add a new school' translated;
 		yourself).
 	quickButtons at:2 put: (PluggableButtonMorph 
-		model: [schoolsList listIndex ifNotZero: [
-			schoolsList selectedItem mold openDialog: 'Edit school' translated.	
-			schoolsList changed: #list	] ]
-		action: #value ::
-		icon: Theme current textEditorIcon ;
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickEdit: 
+		actionArgument: (Array with: decoratedSchool with: listMorph)
+		label: nil ::
+		icon: Theme current textEditorIcon;
 		setBalloonText: 'Edit the selected school' translated;
 		yourself).
 	quickButtons at:3 put: (PluggableButtonMorph 
-		model: [schoolsList listIndex ifNotZero: [
-			schools remove: schoolsList selectedItem.
-			schoolsList changed: #list	] ] 
-		action: #value ::
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickDelete: 
+		actionArgument: (Array with: decoratedSchool with: listMorph)
+		label: nil ::
 		icon: Theme current deleteIcon ;
 		setBalloonText: 'Delete the selected school' translated;
 		yourself).	
-	pane addMorph:(decoratedSchool := DecoratedPane 
-		open: listMorph 
-		label: 'Schools' translated 
-		quickButtons: quickButtons).
+	decoratedSchool quickButtons: quickButtons.
+	pane addMorph: decoratedSchool.
 	^ pane! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:27:25'!
+quickAdd: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the class of the object to instantiate
+3. the decorated pane
+4. the listMorph
+"
+ | objectClass decorator listModel listMorph newObject objectMold objectPane quickButtons |
+	objectClass := args first.
+	decorator := args second.
+	listMorph := args third .
+	listModel := listMorph model.
+	quickButtons := decorator quickButtons.
+	newObject := objectClass new.
+	objectMold := newObject mold.
+	objectPane := objectMold newPane.
+	objectPane layoutSpec: LayoutSpec useAll.
+	objectPane 
+		actionOnAccept: [
+			objectMold validate.
+			objectMold isValid ifTrue: [
+				objectMold save.
+				listModel list add: newObject .
+				decorator replaceSubmorph: objectPane by: listMorph.
+				quickButtons submorphsDo: #lockUnlockMorph.
+				listModel changed: #list]					
+			];
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:32:56'!
+quickDelete: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the decorated pane
+2. the listMorph
+"
+ | decorator listModel listMorph objectPane text quickButtons |
+	decorator := args first .
+	listMorph := args second .
+	listModel := listMorph model.
+	listModel listIndex isZero ifTrue: [^ self]. "no selected item"
+	quickButtons := decorator quickButtons.
+	text := TextParagraphMorph contents: ('Are you sure to delete 	"{1}" ?' format: {listModel selectedItem}) :: borderWidth: 0; color: Color transparent.
+	objectPane := nil.
+	objectPane := PluggablePane open: [text] view: #value accept:[
+		listModel list remove: listModel selectedItem.
+		decorator replaceSubmorph: objectPane by: listMorph.
+		quickButtons submorphsDo: #lockUnlockMorph.
+		listModel changed: #list]				.
+	objectPane
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	objectPane layoutSpec: LayoutSpec useAll.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:13:05'!
+quickEdit: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the decorated pane
+2. the listMorph
+"
+ | decorator listModel listMorph objectMold objectPane quickButtons |
+	decorator := args first .
+	listMorph := args second .
+	listModel := listMorph model.
+	listModel listIndex isZero ifTrue: [^ self]. "no selected item"
+	quickButtons := decorator quickButtons.
+	objectMold := listModel selectedItem mold.
+	objectPane := objectMold newPane.
+	objectPane layoutSpec: LayoutSpec useAll.
+	objectPane 
+		actionOnAccept: [
+			objectMold validate.
+			objectMold isValid ifTrue: [
+				objectMold save.
+				decorator replaceSubmorph: objectPane by: listMorph.
+				quickButtons submorphsDo: #lockUnlockMorph.
+				listModel changed: #list]					
+			];
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
 
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
