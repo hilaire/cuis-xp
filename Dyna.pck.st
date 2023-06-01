@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5836] on 1 June 2023 at 8:03:07 pm'!
+'From Cuis 6.0 [latest update: #5836] on 1 June 2023 at 10:44:42 pm'!
 'Description '!
-!provides: 'Dyna' 1 10!
+!provides: 'Dyna' 1 11!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -321,38 +321,46 @@ quickEdit: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 20:00:15'!
-viewer
-	| pane attributeView column |
-	pane := LayoutMorph newColumn.
-	" User text "
-	attributeView := TextParagraphMorph contents: user printString :: 
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 22:19:07'!
+view: anAttribute in: viewer
+	^ TextParagraphMorph contents: anAttribute printString :: 
 		color: Color transparent;
-		setBalloonText: ('Clic to browse {1}.' translated format: {user printString});
+		setBalloonText: ('Click to browse "{1}".' translated format: {anAttribute printString});
 		borderWidth: 0;
 		setProperty: #'handlesMouseDown:' 		toValue: [ :ignored | true ];
 		setProperty: #'mouseButton1Up:localPosition:'
-			toValue: [ :event :position |  'Request to view attribute' print];
+			toValue: [ :event :position | | attributeMold attribueEditor |
+				attributeMold := anAttribute mold.
+				attribueEditor := attributeMold newPane.
+				attribueEditor 
+					actionOnAccept: [
+						attributeMold validate.
+						attributeMold isValid ifTrue: ["attribute edited, present new viewer of self "
+							attributeMold save.
+							attribueEditor owner replaceSubmorph: attribueEditor by: self viewer]		 ]			;
+					actionOnCancel: [" attribute edition cancelled, present the former viewer "
+						attribueEditor owner replaceSubmorph: attribueEditor by: viewer]; 
+					buildMorphicWindow.
+				viewer owner replaceSubmorph: viewer by: attribueEditor ];
 		yourself.
-	pane addMorph: (DecoratedPane open: attributeView label: 'User' translated).
+! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 22:21:50'!
+viewer
+	| viewer column |
+	viewer := LayoutMorph newColumn.
+	" User text "
+	viewer 	addMorph: (DecoratedPane open: (self view: user in: viewer) label: 'User' translated).
 	" School texts "
 	column := LayoutMorph newColumn ::
 		color: Color transparent;
 		yourself.
-	schools do: [:aSchool |
-			attributeView := TextParagraphMorph contents: '• ', aSchool printString :: 
-				layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft); 
-				color: Color transparent;
-				setBalloonText: ('Clic to browse {1}.' translated format: {aSchool printString});
-				borderWidth: 0;
-				setProperty: #'handlesMouseDown:' 		toValue: [ :ignored | true ];
-				setProperty: #'mouseButton1Up:localPosition:'
-					toValue: [ :event :position |  'Request to view attribute' print];
-				yourself.
-			
-		column addMorph: attributeView].
-	pane addMorph: (DecoratedPane open: column label: 'Schools' translated).	
-	^ pane! !
+	schools do: [:aSchool | 		
+		column 
+			addMorph: 	(self view: aSchool in: viewer)		 
+			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
+	viewer addMorph: (DecoratedPane open: column label: 'Schools' translated).	
+	^ viewer! !
 
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
