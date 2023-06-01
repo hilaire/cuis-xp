@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5816] on 30 May 2023 at 9:33:30 pm'!
+'From Cuis 6.0 [latest update: #5836] on 1 June 2023 at 8:03:07 pm'!
 'Description '!
-!provides: 'Dyna' 1 9!
+!provides: 'Dyna' 1 10!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -321,6 +321,39 @@ quickEdit: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 20:00:15'!
+viewer
+	| pane attributeView column |
+	pane := LayoutMorph newColumn.
+	" User text "
+	attributeView := TextParagraphMorph contents: user printString :: 
+		color: Color transparent;
+		setBalloonText: ('Clic to browse {1}.' translated format: {user printString});
+		borderWidth: 0;
+		setProperty: #'handlesMouseDown:' 		toValue: [ :ignored | true ];
+		setProperty: #'mouseButton1Up:localPosition:'
+			toValue: [ :event :position |  'Request to view attribute' print];
+		yourself.
+	pane addMorph: (DecoratedPane open: attributeView label: 'User' translated).
+	" School texts "
+	column := LayoutMorph newColumn ::
+		color: Color transparent;
+		yourself.
+	schools do: [:aSchool |
+			attributeView := TextParagraphMorph contents: '• ', aSchool printString :: 
+				layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft); 
+				color: Color transparent;
+				setBalloonText: ('Clic to browse {1}.' translated format: {aSchool printString});
+				borderWidth: 0;
+				setProperty: #'handlesMouseDown:' 		toValue: [ :ignored | true ];
+				setProperty: #'mouseButton1Up:localPosition:'
+					toValue: [ :event :position |  'Request to view attribute' print];
+				yourself.
+			
+		column addMorph: attributeView].
+	pane addMorph: (DecoratedPane open: column label: 'Schools' translated).	
+	^ pane! !
+
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
 	super initialize.
@@ -358,10 +391,10 @@ lastName
 lastName: aString
 	lastName := 	aString ! !
 
-!DyBPerson methodsFor: 'printing' stamp: 'hlsf 5/28/2023 18:00:55'!
+!DyBPerson methodsFor: 'printing' stamp: 'hlsf 6/1/2023 18:53:33'!
 printOn: str
 	(firstName isNil or: [lastName isNil])
-		ifTrue: [super printOn: str] 
+		ifTrue: [str nextPutAll: 'Unknown user' translated]
 		ifFalse: [ 
 			str nextPutAll: firstName;
 			space;
@@ -440,9 +473,9 @@ mold
 		on: #email of: self.
 	^ mold! !
 
-!DyBSchool methodsFor: 'printing' stamp: 'hlsf 5/29/2023 16:57:29'!
+!DyBSchool methodsFor: 'printing' stamp: 'hlsf 6/1/2023 19:52:41'!
 printOn: str
-	name ifNil: [super printOn: str] 
+	name ifNil: [str nextPutAll: 'Unknown school' translated] 
 		ifNotNil: [	str nextPutAll: name]! !
 
 !DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 5/22/2023 20:08:23'!
