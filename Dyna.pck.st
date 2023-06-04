@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5836] on 1 June 2023 at 10:44:42 pm'!
+'From Cuis 6.0 [latest update: #5836] on 4 June 2023 at 6:30:14 pm'!
 'Description '!
-!provides: 'Dyna' 1 11!
+!provides: 'Dyna' 1 16!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -15,16 +15,6 @@ Object subclass: #DyBAgenda
 DyBAgenda class
 	instanceVariableNames: ''!
 
-!classDefinition: #DyBApp category: 'Dyna-Core'!
-Object subclass: #DyBApp
-	instanceVariableNames: 'user schools agenda'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Dyna-Core'!
-!classDefinition: 'DyBApp class' category: 'Dyna-Core'!
-DyBApp class
-	instanceVariableNames: ''!
-
 !classDefinition: #DyBAssignment category: 'Dyna-Core'!
 Object subclass: #DyBAssignment
 	instanceVariableNames: 'date timeSlot task'
@@ -33,16 +23,6 @@ Object subclass: #DyBAssignment
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBAssignment class' category: 'Dyna-Core'!
 DyBAssignment class
-	instanceVariableNames: ''!
-
-!classDefinition: #DyBClassGroup category: 'Dyna-Core'!
-Object subclass: #DyBClassGroup
-	instanceVariableNames: 'number headTeacher students courses'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Dyna-Core'!
-!classDefinition: 'DyBClassGroup class' category: 'Dyna-Core'!
-DyBClassGroup class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBCourse category: 'Dyna-Core'!
@@ -65,8 +45,38 @@ Object subclass: #DyBCourseHour
 DyBCourseHour class
 	instanceVariableNames: ''!
 
+!classDefinition: #DyBModel category: 'Dyna-Core'!
+Object subclass: #DyBModel
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBModel class' category: 'Dyna-Core'!
+DyBModel class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBApp category: 'Dyna-Core'!
+DyBModel subclass: #DyBApp
+	instanceVariableNames: 'user schools agenda'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBApp class' category: 'Dyna-Core'!
+DyBApp class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBClassGroup category: 'Dyna-Core'!
+DyBModel subclass: #DyBClassGroup
+	instanceVariableNames: 'number headTeacher students courses'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBClassGroup class' category: 'Dyna-Core'!
+DyBClassGroup class
+	instanceVariableNames: ''!
+
 !classDefinition: #DyBPerson category: 'Dyna-Core'!
-Object subclass: #DyBPerson
+DyBModel subclass: #DyBPerson
 	instanceVariableNames: 'lastName firstName email'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -96,7 +106,7 @@ DyBTeacher class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBSchool category: 'Dyna-Core'!
-Object subclass: #DyBSchool
+DyBModel subclass: #DyBSchool
 	instanceVariableNames: 'name phone email timeSlots subjects classGroups'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -140,15 +150,6 @@ DyTopic class
 The place to record teacher/student assignments or other events. It follows the user times slots as described in its related school instances
 !
 
-!DyBApp commentStamp: '<historical>' prior: 0!
-- user: a teacher or student 
-- schools: collection of schools the student is enrolled in or the teacher teaches in
-- agenda of the user!
-
-!DyBClassGroup commentStamp: '<historical>' prior: 0!
-It describes a class: its number, the list of its students, taught courses, etc.
-!
-
 !DyBCourse commentStamp: '<historical>' prior: 0!
 I describe a course of a teacher or a course attended by a student:
 - subject: the taught topic (Math, History,...)
@@ -160,6 +161,15 @@ I describe a course of a teacher or a course attended by a student:
 Describes one or more contiguous teaching periods.
 
 timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
+
+!DyBApp commentStamp: '<historical>' prior: 0!
+- user: a teacher or student 
+- schools: collection of schools the student is enrolled in or the teacher teaches in
+- agenda of the user!
+
+!DyBClassGroup commentStamp: '<historical>' prior: 0!
+It describes a class: its number, the list of its students, taught courses, etc.
+!
 
 !DyBStudent commentStamp: '<historical>' prior: 0!
 - classGroup: the class the student belong to!
@@ -187,48 +197,45 @@ initialize
 	super initialize.
 	assignments := OrderedCollection new! !
 
-!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
+!DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
 initialize
 	super initialize.
-	schools := OrderedCollection new.
-	user := DyBTeacher new.! !
+	courseHours := OrderedCollection new! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:29:37'!
-editor
-	| pane decoratedSchool listMorph quickButtons |
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 17:55:10'!
+editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individualLabel
+" A decorated editor to edit a collection of models "
+	| listMorph quickButtons decoratedModel |
 	listMorph := PluggableListMorph 
-		model: (ListModel with: schools)		
+		model: (ListModel with: aCollection )		
 		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
-	decoratedSchool := DecoratedPane open: listMorph label: 'Schools' translated.
-	pane := LayoutMorph newColumn.
-	pane addMorph: (DecoratedPane open: user mold newPane label: 'User' translated).
+	decoratedModel := DecoratedPane open: listMorph label: pluralLabel .
 	quickButtons := Array new: 3.
 	quickButtons at:1 put: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickAdd: 
-		actionArgument: (Array with: DyBSchool with: decoratedSchool with: listMorph)
+		actionArgument: (Array with: classModel with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current listAddIcon;
-		setBalloonText: 'Add a new school' translated;
+		setBalloonText: ('Add a new {1}' translated format: {individualLabel});
 		yourself).
 	quickButtons at:2 put: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickEdit: 
-		actionArgument: (Array with: decoratedSchool with: listMorph)
+		actionArgument: (Array with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current textEditorIcon;
-		setBalloonText: 'Edit the selected school' translated;
+		setBalloonText: ('Edit the selected {1}' translated format: {individualLabel});
 		yourself).
 	quickButtons at:3 put: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickDelete: 
-		actionArgument: (Array with: decoratedSchool with: listMorph)
+		actionArgument: (Array with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current deleteIcon ;
-		setBalloonText: 'Delete the selected school' translated;
+		setBalloonText: ('Delete the selected {1}' translated format: {individualLabel});
 		yourself).	
-	decoratedSchool quickButtons: quickButtons.
-	pane addMorph: decoratedSchool.
-	^ pane! !
+	decoratedModel quickButtons: quickButtons.
+	^ decoratedModel! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:27:25'!
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 14:13:27'!
 quickAdd: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the class of the object to instantiate
@@ -262,7 +269,7 @@ quickAdd: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:32:56'!
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 14:13:33'!
 quickDelete: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the decorated pane
@@ -290,7 +297,7 @@ quickDelete: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 5/30/2023 21:13:05'!
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 14:13:36'!
 quickEdit: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the decorated pane
@@ -321,51 +328,176 @@ quickEdit: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 22:19:07'!
-view: anAttribute in: viewer
-	^ TextParagraphMorph contents: anAttribute printString :: 
-		color: Color transparent;
-		setBalloonText: ('Click to browse "{1}".' translated format: {anAttribute printString});
-		borderWidth: 0;
-		setProperty: #'handlesMouseDown:' 		toValue: [ :ignored | true ];
-		setProperty: #'mouseButton1Up:localPosition:'
-			toValue: [ :event :position | | attributeMold attribueEditor |
-				attributeMold := anAttribute mold.
-				attribueEditor := attributeMold newPane.
-				attribueEditor 
-					actionOnAccept: [
-						attributeMold validate.
-						attributeMold isValid ifTrue: ["attribute edited, present new viewer of self "
-							attributeMold save.
-							attribueEditor owner replaceSubmorph: attribueEditor by: self viewer]		 ]			;
-					actionOnCancel: [" attribute edition cancelled, present the former viewer "
-						attribueEditor owner replaceSubmorph: attribueEditor by: viewer]; 
-					buildMorphicWindow.
-				viewer owner replaceSubmorph: viewer by: attribueEditor ];
-		yourself.
-! !
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 17:36:01'!
+viewsFor: aCollection in: aViewer browse: canBeBrowsed
+" Present a column of text views for each item of the collection. 
+Each view may triggers the event #browseTo when clicked"
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/1/2023 22:21:50'!
-viewer
-	| viewer column |
-	viewer := LayoutMorph newColumn.
-	" User text "
-	viewer 	addMorph: (DecoratedPane open: (self view: user in: viewer) label: 'User' translated).
-	" School texts "
+	| column |
 	column := LayoutMorph newColumn ::
 		color: Color transparent;
 		yourself.
-	schools do: [:aSchool | 		
+	aCollection do: [:aModel | 		
 		column 
-			addMorph: 	(self view: aSchool in: viewer)		 
+			addMorph: 	(self viewFor: aModel in: aViewer browse: canBeBrowsed )		 
 			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
-	viewer addMorph: (DecoratedPane open: column label: 'Schools' translated).	
-	^ viewer! !
+	^ column! !
 
-!DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 14:33:11'!
+editor
+" 
+The editor presents in fields the attributes this model can edit. Only attributes defined in
+the model are edited. An editor comes with an Accept and Cancel buttons.
+The Accept activation does validation prior saving the updated fields
+"
+	self subclassResponsibility ! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:29:46'!
+plugView: aMorph
+" Add an Edit button to this contents "
+	| viewer |
+	viewer := nil.
+	viewer := PluggablePane 
+		open: [aMorph] 
+		view: #value 
+		accept: 	["Edit me" viewer owner replaceSubmorph: viewer by: self editor			]  ::
+		acceptLabel: 'Edit' translated;
+		buildMorphicWindow ;
+		yourself.
+	^ viewer ! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:35:49'!
+viewFor: anAttribute in: viewer
+" Present a text view of an attribute. Trigger the event #browseTo when view clicked"
+	^ self viewFor: anAttribute in: viewer browse: true! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:35:48'!
+viewFor: anAttribute in: viewer browse: canBeBrowsed
+" Present a text view of an attribute. May trigger the event #browseTo when clicked"
+	| aTextView |
+	aTextView := TextParagraphMorph contents: anAttribute viewerString :: 
+		color: Color transparent;
+		borderWidth: 0;
+		yourself.
+	canBeBrowsed ifTrue: [
+		aTextView 
+			setBalloonText: 
+				('Click to browse "{1}".' translated format: {anAttribute printString});			
+			setProperty: #'handlesMouseDown:' 					toValue: [ :ignored | true ];
+			setProperty: #'mouseButton1Up:localPosition:'
+			toValue: [ :event :position | 	self triggerEvent: #browseTo with: anAttribute]].
+	^ aTextView ! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 14:34:08'!
+viewer
+" 
+The viewer presents the attributes of the model in text form. When an attribute is defined elsewhere,
+its presentation in the viewer is activable by mouse click to browser to its viewer.
+A viewer always comes with an Edit button to present the editor of the model.
+"
+
+	self subclassResponsibility ! !
+
+!DyBModel methodsFor: 'printing' stamp: 'hlsf 6/4/2023 15:51:44'!
+viewerString
+	^ '• ', self printString! !
+
+!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
 	super initialize.
-	courseHours := OrderedCollection new! !
+	schools := OrderedCollection new.
+	user := DyBTeacher new.! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:27:06'!
+editor
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: user mold newPane label: 'Owner' translated);
+		addMorph: (self 
+			editorsFor: schools 
+			ofType: DyBSchool 
+			labelled: 'Schools' translated 
+			named: 'school' translated);
+		yourself! !
+
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:36:01'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column 	addMorph: (DecoratedPane 
+		open: (self viewFor: user in: column) 
+		label: 'Owner' translated).
+	column addMorph: (DecoratedPane 
+		open: (self viewsFor: schools in: column browse: true)
+		label: 'Schools' translated).	
+	^ self plugView: column! !
+
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:29:54'!
+editor
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: self mold newPane label: '');
+		addMorph: (DecoratedPane 
+			open: headTeacher mold newPane label: 'Head teacher' translated);
+		addMorph: (self 
+			editorsFor: courses 
+			ofType: DyBCourse 
+			labelled: 'Lessons' translated 
+			named: 'lesson' translated);
+		addMorph: (self 
+			editorsFor: students 
+			ofType: DyBStudent 
+			labelled: 'Students' translated 
+			named: 'student' translated);
+		yourself! !
+
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:12:37'!
+mold
+	| mold |
+	mold := Mold new.
+	mold stringField
+		label: 'Number' translated;
+		on: #number of: self;
+		beRequired.
+"Head teacher - aPerson
+students - collection of DyBStudent
+courses - collection of DyBCourse
+"
+
+	^ mold! !
+
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:23:59'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column 	addMorph: (DecoratedPane 
+		open: (self viewFor: headTeacher in: column) 
+		label: 'Head teacher' translated).
+	column addMorph: (DecoratedPane 
+		open: (self viewsFor: courses in: column browse: true)
+		label: 'Lessons' translated).	
+	column addMorph: (DecoratedPane 
+		open: (self viewsFor: students in: column browse: true)
+		label: 'Students' translated).	
+	^ self plugView: column! !
+
+!DyBClassGroup methodsFor: 'accessing' stamp: 'hlsf 6/4/2023 18:12:55'!
+number
+	^number! !
+
+!DyBClassGroup methodsFor: 'accessing' stamp: 'hlsf 6/4/2023 18:13:29'!
+number: aUnicodeString 
+	number := aUnicodeString! !
+
+!DyBClassGroup methodsFor: 'printing' stamp: 'hlsf 6/4/2023 18:15:58'!
+printOn: str
+	number ifNil: [str nextPutAll: 'Unknown class' translated]
+		ifNotNil: [	str nextPutAll: number ]! !
+
+!DyBClassGroup methodsFor: 'initialization' stamp: 'hlsf 6/4/2023 18:24:37'!
+initialize
+	super initialize.
+	headTeacher := DyBTeacher new.
+	courses := OrderedCollection new.
+	students := OrderedCollection new! !
 
 !DyBPerson methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:30'!
 isStudent
@@ -399,10 +531,10 @@ lastName
 lastName: aString
 	lastName := 	aString ! !
 
-!DyBPerson methodsFor: 'printing' stamp: 'hlsf 6/1/2023 18:53:33'!
+!DyBPerson methodsFor: 'printing' stamp: 'hlsf 6/4/2023 15:58:45'!
 printOn: str
 	(firstName isNil or: [lastName isNil])
-		ifTrue: [str nextPutAll: 'Unknown user' translated]
+		ifTrue: [str nextPutAll: 'Unknown person' translated]
 		ifFalse: [ 
 			str nextPutAll: firstName;
 			space;
@@ -430,9 +562,37 @@ mold
 isStudent
 	^ true! !
 
-!DyBTeacher methodsFor: 'as yet unclassified' stamp: 'hlsf 5/23/2023 20:18:52'!
+!DyBTeacher methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:26:31'!
+editor
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: self mold newPane label: 'Teacher' translated);
+		addMorph: (self 
+			editorsFor: classGroups 
+			ofType: DyBClassGroup 
+			labelled: 'Class groups' translated 
+			named: 'class' translated);
+		yourself! !
+
+!DyBTeacher methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:06:40'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column 	addMorph: (DecoratedPane 
+		open: (self viewFor: self in: column) 
+		label: 'Teacher' translated).
+	column addMorph: (DecoratedPane 
+		open: (self viewsFor: classGroups in: column browse: true)
+		label: 'Classes taught' translated).	
+	^ self plugView: column! !
+
+!DyBTeacher methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:52'!
 isTeacher
 	^ true! !
+
+!DyBTeacher methodsFor: 'as yet unclassified' stamp: 'hlsf 6/4/2023 18:08:32'!
+initialize
+	super initialize.
+	classGroups := OrderedCollection new! !
 
 !DyBSchool methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:44:06'!
 initialize
