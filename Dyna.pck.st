@@ -1,6 +1,7 @@
-'From Cuis 6.0 [latest update: #5836] on 4 June 2023 at 6:30:14 pm'!
+'From Cuis 6.0 [latest update: #5836] on 5 June 2023 at 11:16:37 pm'!
 'Description '!
-!provides: 'Dyna' 1 16!
+!provides: 'Dyna' 1 17!
+!requires: 'UI-Panel' 1 74 nil!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
