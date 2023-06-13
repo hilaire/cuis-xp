@@ -1,7 +1,8 @@
-'From Cuis 6.0 [latest update: #5836] on 5 June 2023 at 11:16:37 pm'!
+'From Cuis 6.0 [latest update: #5847] on 13 June 2023 at 10:45:46 pm'!
 'Description '!
-!provides: 'Dyna' 1 17!
+!provides: 'Dyna' 1 21!
 !requires: 'UI-Panel' 1 74 nil!
+!requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
@@ -329,18 +330,19 @@ quickEdit: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 17:36:01'!
-viewsFor: aCollection in: aViewer browse: canBeBrowsed
+!DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/13/2023 21:07:58'!
+viewsFor: aCollection browse: canBeBrowsed
 " Present a column of text views for each item of the collection. 
 Each view may triggers the event #browseTo when clicked"
 
 	| column |
 	column := LayoutMorph newColumn ::
+		layoutSpec: LayoutSpec useAll;
 		color: Color transparent;
 		yourself.
 	aCollection do: [:aModel | 		
 		column 
-			addMorph: 	(self viewFor: aModel in: aViewer browse: canBeBrowsed )		 
+			addMorph: 	(self viewFor: aModel browse: canBeBrowsed )		 
 			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
 	^ column! !
 
@@ -353,7 +355,21 @@ The Accept activation does validation prior saving the updated fields
 "
 	self subclassResponsibility ! !
 
-!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:29:46'!
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:23:19'!
+paneFor: anObject label: aTitle 
+	^self paneFor: anObject label: aTitle browse: true! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:15:49'!
+paneFor: anObject label: aTitle browse: canBeBrowsed
+" Present the view of an object in a decorated pane with a title "
+	| viewBuilderMessage attributeView |
+	viewBuilderMessage := anObject isCollection 
+		ifTrue:  [#viewsFor:browse:]
+		ifFalse: [#viewFor:browse:].
+	attributeView := self perform: viewBuilderMessage with: anObject with: canBeBrowsed.
+	^ DecoratedPane open: attributeView label: aTitle ! !
+
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/6/2023 22:07:20'!
 plugView: aMorph
 " Add an Edit button to this contents "
 	| viewer |
@@ -364,19 +380,20 @@ plugView: aMorph
 		accept: 	["Edit me" viewer owner replaceSubmorph: viewer by: self editor			]  ::
 		acceptLabel: 'Edit' translated;
 		buildMorphicWindow ;
+		layoutSpec: LayoutSpec useAll;
 		yourself.
 	^ viewer ! !
 
-!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:35:49'!
-viewFor: anAttribute in: viewer
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:07:25'!
+viewFor: anAttribute 
 " Present a text view of an attribute. Trigger the event #browseTo when view clicked"
-	^ self viewFor: anAttribute in: viewer browse: true! !
+	^ self viewFor: anAttribute browse: true! !
 
-!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:35:48'!
-viewFor: anAttribute in: viewer browse: canBeBrowsed
+!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:06:40'!
+viewFor: anAttribute browse: canBeBrowsed
 " Present a text view of an attribute. May trigger the event #browseTo when clicked"
 	| aTextView |
-	aTextView := TextParagraphMorph contents: anAttribute viewerString :: 
+	aTextView := TextParagraphMorph contents: anAttribute printString :: 
 		color: Color transparent;
 		borderWidth: 0;
 		yourself.
@@ -399,10 +416,6 @@ A viewer always comes with an Edit button to present the editor of the model.
 
 	self subclassResponsibility ! !
 
-!DyBModel methodsFor: 'printing' stamp: 'hlsf 6/4/2023 15:51:44'!
-viewerString
-	^ '• ', self printString! !
-
 !DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
 	super initialize.
@@ -420,16 +433,12 @@ editor
 			named: 'school' translated);
 		yourself! !
 
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/4/2023 17:36:01'!
+!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:25:55'!
 viewer
 	| column |
 	column := LayoutMorph newColumn.
-	column 	addMorph: (DecoratedPane 
-		open: (self viewFor: user in: column) 
-		label: 'Owner' translated).
-	column addMorph: (DecoratedPane 
-		open: (self viewsFor: schools in: column browse: true)
-		label: 'Schools' translated).	
+	column 	addMorph: (self paneFor: user label: 'Owner' translated);
+		addMorph: (self paneFor: schools label: 'Schools' translated).
 	^ self plugView: column! !
 
 !DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:29:54'!
@@ -465,19 +474,13 @@ courses - collection of DyBCourse
 
 	^ mold! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:23:59'!
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:20:47'!
 viewer
 	| column |
 	column := LayoutMorph newColumn.
-	column 	addMorph: (DecoratedPane 
-		open: (self viewFor: headTeacher in: column) 
-		label: 'Head teacher' translated).
-	column addMorph: (DecoratedPane 
-		open: (self viewsFor: courses in: column browse: true)
-		label: 'Lessons' translated).	
-	column addMorph: (DecoratedPane 
-		open: (self viewsFor: students in: column browse: true)
-		label: 'Students' translated).	
+	column 	addMorph: (self paneFor: headTeacher label: 'Head teacher' translated);	
+		addMorph: (self paneFor: courses label: 'Lessons' translated);
+		addMorph: (self paneFor: students label: 'Students' translated).
 	^ self plugView: column! !
 
 !DyBClassGroup methodsFor: 'accessing' stamp: 'hlsf 6/4/2023 18:12:55'!
@@ -574,16 +577,11 @@ editor
 			named: 'class' translated);
 		yourself! !
 
-!DyBTeacher methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:06:40'!
+!DyBTeacher methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:27:26'!
 viewer
 	| column |
 	column := LayoutMorph newColumn.
-	column 	addMorph: (DecoratedPane 
-		open: (self viewFor: self in: column) 
-		label: 'Teacher' translated).
-	column addMorph: (DecoratedPane 
-		open: (self viewsFor: classGroups in: column browse: true)
-		label: 'Classes taught' translated).	
+	column 	addMorph: (self paneFor: classGroups label: 'Classes taught' translated).
 	^ self plugView: column! !
 
 !DyBTeacher methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:52'!
@@ -626,6 +624,30 @@ schoolName
 schoolName: aString
 	name := aString ! !
 
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/13/2023 22:21:39'!
+editor
+	| mold |
+	mold := self mold.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: mold newPane label: 'Information' translated);
+		addMorph: (self 
+			editorsFor: timeSlots 
+			ofType: DyBTimeSlot 
+			labelled: 'Time slots' translated 
+			named: 'time slot' translated);
+		addMorph: (self 
+			editorsFor: classGroups 
+			ofType: DyBClassGroup 
+			labelled: 'Classes' translated 
+			named: 'class' translated);
+		addMorph: (self 
+			editorsFor: subjects 
+			ofType: String 
+			labelled: 'Taught subjects' translated 
+			named: 'subject' translated);
+		yourself! !
+
 !DyBSchool methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:55:51'!
 mold
 	| mold |
@@ -641,6 +663,16 @@ mold
 		label: 'Email' translated;
 		on: #email of: self.
 	^ mold! !
+
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:23:41'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column 	
+		addMorph: (self paneFor: timeSlots label: 'Time slots' translated);
+		addMorph: (self paneFor: subjects label: 'Taught subjects' translated);
+		addMorph: (self paneFor: classGroups label: 'Classes' translated).
+	^ self plugView: column! !
 
 !DyBSchool methodsFor: 'printing' stamp: 'hlsf 6/1/2023 19:52:41'!
 printOn: str
@@ -701,3 +733,7 @@ printOn: aStream
 				nextPutAll: startTime hhmm24 ;
 				nextPut: $-;
 				nextPutAll: endTime hhmm24 ]! !
+
+!String methodsFor: '*Dyna' stamp: 'hlsf 6/12/2023 22:29:16'!
+mold
+	self shouldBeImplemented.! !
