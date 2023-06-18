@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 13 June 2023 at 10:45:46 pm'!
+'From Cuis 6.0 [latest update: #5847] on 18 June 2023 at 10:30:38 pm'!
 'Description '!
-!provides: 'Dyna' 1 21!
+!provides: 'Dyna' 1 22!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna'!
@@ -459,7 +459,7 @@ editor
 			named: 'student' translated);
 		yourself! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:12:37'!
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:29:19'!
 mold
 	| mold |
 	mold := Mold new.
@@ -471,6 +471,7 @@ mold
 students - collection of DyBStudent
 courses - collection of DyBCourse
 "
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
 
 	^ mold! !
 
@@ -544,7 +545,7 @@ printOn: str
 			space;
 			nextPutAll: lastName]! !
 
-!DyBPerson methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:55:56'!
+!DyBPerson methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:29:05'!
 mold
 	| mold |
 	mold := Mold new.
@@ -560,6 +561,7 @@ mold
 		label: 'Email' translated;
 		on: #email of: self;
 		beRequired.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ mold! !
 
 !DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
@@ -624,13 +626,10 @@ schoolName
 schoolName: aString
 	name := aString ! !
 
-!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/13/2023 22:21:39'!
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:27:51'!
 editor
-	| mold |
-	mold := self mold.
-	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Information' translated);
+		addMorph: (DecoratedPane open: self mold newPane label: 'Information' translated);
 		addMorph: (self 
 			editorsFor: timeSlots 
 			ofType: DyBTimeSlot 
@@ -648,7 +647,7 @@ editor
 			named: 'subject' translated);
 		yourself! !
 
-!DyBSchool methodsFor: 'ui' stamp: 'hlsf 5/29/2023 16:55:51'!
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:27:57'!
 mold
 	| mold |
 	mold := Mold new.
@@ -662,6 +661,7 @@ mold
 	mold stringField
 		label: 'Email' translated;
 		on: #email of: self.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ mold! !
 
 !DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:23:41'!
@@ -679,7 +679,7 @@ printOn: str
 	name ifNil: [str nextPutAll: 'Unknown school' translated] 
 		ifNotNil: [	str nextPutAll: name]! !
 
-!DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 5/22/2023 20:08:23'!
+!DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 6/18/2023 22:29:38'!
 mold
 	| mold start |
 	mold := Mold new.
@@ -697,6 +697,7 @@ mold
 		on: #end of: self;
 		addCondition: [:input :value | input isEmptyOrNil or: [value > start value ] ]
 			labeled: 'End time can''t preced start time.' translated.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ mold
 	! !
 
