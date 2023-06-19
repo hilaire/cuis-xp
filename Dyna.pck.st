@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 18 June 2023 at 10:30:38 pm'!
+'From Cuis 6.0 [latest update: #5847] on 19 June 2023 at 10:58:04 pm'!
 'Description '!
-!provides: 'Dyna' 1 22!
+!provides: 'Dyna' 1 23!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna'!
@@ -25,26 +25,6 @@ Object subclass: #DyBAssignment
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBAssignment class' category: 'Dyna-Core'!
 DyBAssignment class
-	instanceVariableNames: ''!
-
-!classDefinition: #DyBCourse category: 'Dyna-Core'!
-Object subclass: #DyBCourse
-	instanceVariableNames: 'subject color teacher courseHours binder'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Dyna-Core'!
-!classDefinition: 'DyBCourse class' category: 'Dyna-Core'!
-DyBCourse class
-	instanceVariableNames: ''!
-
-!classDefinition: #DyBCourseHour category: 'Dyna-Core'!
-Object subclass: #DyBCourseHour
-	instanceVariableNames: 'room dayOfWeek timeSlots'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Dyna-Core'!
-!classDefinition: 'DyBCourseHour class' category: 'Dyna-Core'!
-DyBCourseHour class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBModel category: 'Dyna-Core'!
@@ -75,6 +55,26 @@ DyBModel subclass: #DyBClassGroup
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBClassGroup class' category: 'Dyna-Core'!
 DyBClassGroup class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBCourse category: 'Dyna-Core'!
+DyBModel subclass: #DyBCourse
+	instanceVariableNames: 'subject color teacher courseHours binder'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBCourse class' category: 'Dyna-Core'!
+DyBCourse class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBCourseHour category: 'Dyna-Core'!
+DyBModel subclass: #DyBCourseHour
+	instanceVariableNames: 'room dayOfWeek timeSlots'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBCourseHour class' category: 'Dyna-Core'!
+DyBCourseHour class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBPerson category: 'Dyna-Core'!
@@ -152,6 +152,15 @@ DyTopic class
 The place to record teacher/student assignments or other events. It follows the user times slots as described in its related school instances
 !
 
+!DyBApp commentStamp: '<historical>' prior: 0!
+- user: a teacher or student 
+- schools: collection of schools the student is enrolled in or the teacher teaches in
+- agenda of the user!
+
+!DyBClassGroup commentStamp: '<historical>' prior: 0!
+It describes a class: its number, the list of its students, taught courses, etc.
+!
+
 !DyBCourse commentStamp: '<historical>' prior: 0!
 I describe a course of a teacher or a course attended by a student:
 - subject: the taught topic (Math, History,...)
@@ -163,15 +172,6 @@ I describe a course of a teacher or a course attended by a student:
 Describes one or more contiguous teaching periods.
 
 timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
-
-!DyBApp commentStamp: '<historical>' prior: 0!
-- user: a teacher or student 
-- schools: collection of schools the student is enrolled in or the teacher teaches in
-- agenda of the user!
-
-!DyBClassGroup commentStamp: '<historical>' prior: 0!
-It describes a class: its number, the list of its students, taught courses, etc.
-!
 
 !DyBStudent commentStamp: '<historical>' prior: 0!
 - classGroup: the class the student belong to!
@@ -198,11 +198,6 @@ Pedagogical document grouped in one topic.!
 initialize
 	super initialize.
 	assignments := OrderedCollection new! !
-
-!DyBCourse methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:59:24'!
-initialize
-	super initialize.
-	courseHours := OrderedCollection new! !
 
 !DyBModel methodsFor: 'ui-collection' stamp: 'hlsf 6/4/2023 17:55:10'!
 editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individualLabel
@@ -441,10 +436,10 @@ viewer
 		addMorph: (self paneFor: schools label: 'Schools' translated).
 	^ self plugView: column! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:29:54'!
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/19/2023 22:08:23'!
 editor
 	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: self mold newPane label: '');
+		addMorph: (DecoratedPane open: self mold newPane label: 'Information');
 		addMorph: (DecoratedPane 
 			open: headTeacher mold newPane label: 'Head teacher' translated);
 		addMorph: (self 
@@ -459,7 +454,7 @@ editor
 			named: 'student' translated);
 		yourself! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:29:19'!
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/19/2023 21:58:49'!
 mold
 	| mold |
 	mold := Mold new.
@@ -467,19 +462,14 @@ mold
 		label: 'Number' translated;
 		on: #number of: self;
 		beRequired.
-"Head teacher - aPerson
-students - collection of DyBStudent
-courses - collection of DyBCourse
-"
 	mold when: #edited send: #triggerEvent: to: self with: #edited.
-
 	^ mold! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:20:47'!
+!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/19/2023 21:59:30'!
 viewer
 	| column |
 	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: headTeacher label: 'Head teacher' translated);	
+	column 	addMorph: (self paneFor: headTeacher label: 'Head teacher' translated browse: false);	
 		addMorph: (self paneFor: courses label: 'Lessons' translated);
 		addMorph: (self paneFor: students label: 'Students' translated).
 	^ self plugView: column! !
@@ -503,6 +493,59 @@ initialize
 	headTeacher := DyBTeacher new.
 	courses := OrderedCollection new.
 	students := OrderedCollection new! !
+
+!DyBCourse methodsFor: 'initialization' stamp: 'hlsf 6/19/2023 22:20:34'!
+initialize
+	super initialize.
+	courseHours := OrderedCollection new.
+	teacher := DyBTeacher new.! !
+
+!DyBCourse methodsFor: 'ui' stamp: 'hlsf 6/19/2023 22:44:39'!
+editor
+	^ LayoutMorph newColumn 
+		addMorph: (DecoratedPane open: self mold newPane label: 'Information' translated);
+		addMorph: (DecoratedPane open: teacher mold newPane label: 'Teacher' translated);
+		addMorph: (self
+			editorsFor: courseHours 
+			ofType: DyBCourseHour 
+			labelled:  'Periods'
+			named: 'periiod');
+		yourself ! !
+
+!DyBCourse methodsFor: 'ui' stamp: 'hlsf 6/19/2023 22:11:16'!
+mold
+	| mold |
+	mold := Mold new.
+	mold stringField 
+		label: 'Subject' translated;
+		on: #subject of: self;
+		beRequired.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
+	^ mold
+		! !
+
+!DyBCourse methodsFor: 'ui' stamp: 'hlsf 6/19/2023 22:45:49'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column
+		addMorph: (self paneFor: teacher label: 'Teacher' translated browse: false);
+		addMorph: (self paneFor: courseHours label: 'Periods' translated).
+	^ self plugView: column! !
+
+!DyBCourse methodsFor: 'accessing' stamp: 'hlsf 6/19/2023 22:33:42'!
+subject
+	^subject! !
+
+!DyBCourse methodsFor: 'accessing' stamp: 'hlsf 6/19/2023 22:34:17'!
+subject: aUnicodeString 
+	subject := aUnicodeString! !
+
+!DyBCourse methodsFor: 'printing' stamp: 'hlsf 6/19/2023 22:42:49'!
+printOn: aStream
+	subject 
+		ifNotNil:  [aStream nextPutAll: subject]
+		ifNil: [aStream nextPutAll: 'a course' translated]! !
 
 !DyBPerson methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:30'!
 isStudent
@@ -590,7 +633,7 @@ viewer
 isTeacher
 	^ true! !
 
-!DyBTeacher methodsFor: 'as yet unclassified' stamp: 'hlsf 6/4/2023 18:08:32'!
+!DyBTeacher methodsFor: 'initialization' stamp: 'hlsf 6/4/2023 18:08:32'!
 initialize
 	super initialize.
 	classGroups := OrderedCollection new! !
@@ -664,12 +707,12 @@ mold
 	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ mold! !
 
-!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:23:41'!
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/19/2023 21:53:12'!
 viewer
 	| column |
 	column := LayoutMorph newColumn.
 	column 	
-		addMorph: (self paneFor: timeSlots label: 'Time slots' translated);
+		addMorph: (self paneFor: timeSlots label: 'Time slots' translated browse: false);
 		addMorph: (self paneFor: subjects label: 'Taught subjects' translated);
 		addMorph: (self paneFor: classGroups label: 'Classes' translated).
 	^ self plugView: column! !
@@ -678,28 +721,6 @@ viewer
 printOn: str
 	name ifNil: [str nextPutAll: 'Unknown school' translated] 
 		ifNotNil: [	str nextPutAll: name]! !
-
-!DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 6/18/2023 22:29:38'!
-mold
-	| mold start |
-	mold := Mold new.
-	mold stringField
-		label: 'Name' translated;
-		on: #slotName of: self;
-		beRequired.
-	(start := mold timeField)
-		label: 'Start time' translated;
-		example: '8:35';
-		on: #start of: self;
-		beRequired.
-	mold timeField 
-		label: 'End time' translated;
-		on: #end of: self;
-		addCondition: [:input :value | input isEmptyOrNil or: [value > start value ] ]
-			labeled: 'End time can''t preced start time.' translated.
-	mold when: #edited send: #triggerEvent: to: self with: #edited.
-	^ mold
-	! !
 
 !DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:55'!
 end
@@ -725,15 +746,36 @@ start
 start: aTime
 	startTime := aTime ! !
 
-!DyBTimeSlot methodsFor: 'printing' stamp: 'hlsf 5/22/2023 22:04:28'!
+!DyBTimeSlot methodsFor: 'printing' stamp: 'hlsf 6/19/2023 21:50:54'!
 printOn: aStream
 	name ifNil: [ super printOn: aStream ]
 		ifNotNil: [	
-			aStream nextPutAll: name;
-				space;
-				nextPutAll: startTime hhmm24 ;
-				nextPut: $-;
-				nextPutAll: endTime hhmm24 ]! !
+			aStream nextPutAll: name; 				space.
+			startTime print24: true showSeconds: false on: aStream.
+			aStream 	nextPut: $-.
+			endTime print24: true showSeconds: false on: aStream]! !
+
+!DyBTimeSlot methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:29:38'!
+mold
+	| mold start |
+	mold := Mold new.
+	mold stringField
+		label: 'Name' translated;
+		on: #slotName of: self;
+		beRequired.
+	(start := mold timeField)
+		label: 'Start time' translated;
+		example: '8:35';
+		on: #start of: self;
+		beRequired.
+	mold timeField 
+		label: 'End time' translated;
+		on: #end of: self;
+		addCondition: [:input :value | input isEmptyOrNil or: [value > start value ] ]
+			labeled: 'End time can''t preced start time.' translated.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
+	^ mold
+	! !
 
 !String methodsFor: '*Dyna' stamp: 'hlsf 6/12/2023 22:29:16'!
 mold
