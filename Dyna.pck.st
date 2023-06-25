@@ -1,11 +1,22 @@
-'From Cuis 6.0 [latest update: #5847] on 19 June 2023 at 10:58:04 pm'!
+'From Cuis 6.0 [latest update: #5847] on 26 June 2023 at 12:20:17 am'!
 'Description '!
-!provides: 'Dyna' 1 23!
+!provides: 'Dyna' 1 24!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
+SystemOrganization addCategory: 'Dyna-UI'!
 SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
+
+!classDefinition: #DyBUserDataBrowser category: 'Dyna-UI'!
+BreadcrumbsPane subclass: #DyBUserDataBrowser
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-UI'!
+!classDefinition: 'DyBUserDataBrowser class' category: 'Dyna-UI'!
+DyBUserDataBrowser class
+	instanceVariableNames: ''!
 
 !classDefinition: #DyBAgenda category: 'Dyna-Core'!
 Object subclass: #DyBAgenda
@@ -35,16 +46,6 @@ Object subclass: #DyBModel
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBModel class' category: 'Dyna-Core'!
 DyBModel class
-	instanceVariableNames: ''!
-
-!classDefinition: #DyBApp category: 'Dyna-Core'!
-DyBModel subclass: #DyBApp
-	instanceVariableNames: 'user schools agenda'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Dyna-Core'!
-!classDefinition: 'DyBApp class' category: 'Dyna-Core'!
-DyBApp class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBClassGroup category: 'Dyna-Core'!
@@ -117,6 +118,16 @@ DyBModel subclass: #DyBSchool
 DyBSchool class
 	instanceVariableNames: ''!
 
+!classDefinition: #DyBUserData category: 'Dyna-Core'!
+DyBModel subclass: #DyBUserData
+	instanceVariableNames: 'user schools agenda'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBUserData class' category: 'Dyna-Core'!
+DyBUserData class
+	instanceVariableNames: ''!
+
 !classDefinition: #DyBTimeSlot category: 'Dyna-Core'!
 Object subclass: #DyBTimeSlot
 	instanceVariableNames: 'name startTime endTime'
@@ -152,11 +163,6 @@ DyTopic class
 The place to record teacher/student assignments or other events. It follows the user times slots as described in its related school instances
 !
 
-!DyBApp commentStamp: '<historical>' prior: 0!
-- user: a teacher or student 
-- schools: collection of schools the student is enrolled in or the teacher teaches in
-- agenda of the user!
-
 !DyBClassGroup commentStamp: '<historical>' prior: 0!
 It describes a class: its number, the list of its students, taught courses, etc.
 !
@@ -183,6 +189,11 @@ timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
 Description of the user's educational institutions. Possibly several per user.
 !
 
+!DyBUserData commentStamp: '<historical>' prior: 0!
+- user: a teacher or student 
+- schools: collection of schools the student is enrolled in or the teacher teaches in
+- agenda of the user!
+
 !DyBTimeSlot commentStamp: '<historical>' prior: 0!
 Describe the organization of the teaching periods in a school. There are generally 10 time slots per school.
 Example of a time slot: P2, 9:25am, 10:10am!
@@ -193,6 +204,59 @@ A binder contains the pedagogical materials related to a given course.
 
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
+
+!DyBUserDataBrowser methodsFor: 'viewers' stamp: 'hlsf 6/26/2023 00:01:12'!
+userDataViewer: model
+	| column |
+	column := LayoutMorph newColumn.
+	column 	addMorph: (self paneFor: model user label: 'Owner' translated);
+		addMorph: (self paneFor: model schools label: 'Schools' translated).
+	^ self plugView: column! !
+
+!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/25/2023 23:55:16'!
+paneFor: anObject label: aTitle 
+	^self paneFor: anObject label: aTitle browse: true! !
+
+!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/25/2023 23:56:07'!
+paneFor: anObject label: aTitle browse: canBeBrowsed
+" Present the view of an object in a decorated pane with a title "
+	| viewBuilderMessage attributeView |
+	viewBuilderMessage := anObject isCollection 
+		ifTrue:  [#viewsFor:browse:]
+		ifFalse: [#viewFor:browse:].
+	attributeView := self perform: viewBuilderMessage with: anObject with: canBeBrowsed.
+	^ DecoratedPane open: attributeView label: aTitle ! !
+
+!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/26/2023 00:18:52'!
+viewFor: anAttribute browse: canBeBrowsed
+" Present a text view of an attribute."
+	| aTextView |
+	aTextView := TextParagraphMorph contents: anAttribute printString :: 
+		color: Color transparent;
+		borderWidth: 0;
+		yourself.
+	canBeBrowsed ifTrue: [
+		aTextView 
+			setBalloonText: 
+				('Click to browse "{1}".' translated format: {anAttribute printString});			
+			setProperty: #'handlesMouseDown:' 					toValue: [ :ignored | true ];
+			setProperty: #'mouseButton1Up:localPosition:'
+			toValue: [ :event :position | 	self browseTo: anAttribute]].
+	^ aTextView ! !
+
+!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/26/2023 00:18:43'!
+viewsFor: aCollection browse: canBeBrowsed
+" Present a column of text views for each item of the collection"
+	| column |
+	column := LayoutMorph newColumn ::
+		layoutSpec: LayoutSpec useAll;
+		color: Color transparent;
+		yourself.
+	aCollection do: [:anAttribute | 		
+		column 
+			addMorph: 	(self viewFor: anAttribute browse: canBeBrowsed )		 
+			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
+	^ column! !
 
 !DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:46:38'!
 initialize
@@ -379,11 +443,6 @@ plugView: aMorph
 		yourself.
 	^ viewer ! !
 
-!DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:07:25'!
-viewFor: anAttribute 
-" Present a text view of an attribute. Trigger the event #browseTo when view clicked"
-	^ self viewFor: anAttribute browse: true! !
-
 !DyBModel methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:06:40'!
 viewFor: anAttribute browse: canBeBrowsed
 " Present a text view of an attribute. May trigger the event #browseTo when clicked"
@@ -410,31 +469,6 @@ A viewer always comes with an Edit button to present the editor of the model.
 "
 
 	self subclassResponsibility ! !
-
-!DyBApp methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
-initialize
-	super initialize.
-	schools := OrderedCollection new.
-	user := DyBTeacher new.! !
-
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:27:06'!
-editor
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: user mold newPane label: 'Owner' translated);
-		addMorph: (self 
-			editorsFor: schools 
-			ofType: DyBSchool 
-			labelled: 'Schools' translated 
-			named: 'school' translated);
-		yourself! !
-
-!DyBApp methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:25:55'!
-viewer
-	| column |
-	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: user label: 'Owner' translated);
-		addMorph: (self paneFor: schools label: 'Schools' translated).
-	^ self plugView: column! !
 
 !DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/19/2023 22:08:23'!
 editor
@@ -721,6 +755,39 @@ viewer
 printOn: str
 	name ifNil: [str nextPutAll: 'Unknown school' translated] 
 		ifNotNil: [	str nextPutAll: name]! !
+
+!DyBUserData methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
+initialize
+	super initialize.
+	schools := OrderedCollection new.
+	user := DyBTeacher new.! !
+
+!DyBUserData methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:27:06'!
+editor
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: user mold newPane label: 'Owner' translated);
+		addMorph: (self 
+			editorsFor: schools 
+			ofType: DyBSchool 
+			labelled: 'Schools' translated 
+			named: 'school' translated);
+		yourself! !
+
+!DyBUserData methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:25:55'!
+viewer
+	| column |
+	column := LayoutMorph newColumn.
+	column 	addMorph: (self paneFor: user label: 'Owner' translated);
+		addMorph: (self paneFor: schools label: 'Schools' translated).
+	^ self plugView: column! !
+
+!DyBUserData methodsFor: 'accessing' stamp: 'hlsf 6/25/2023 23:54:13'!
+schools
+	^ schools ! !
+
+!DyBUserData methodsFor: 'accessing' stamp: 'hlsf 6/25/2023 23:54:03'!
+user
+	^ user! !
 
 !DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:55'!
 end
