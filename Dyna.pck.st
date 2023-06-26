@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 26 June 2023 at 12:20:17 am'!
+'From Cuis 6.0 [latest update: #5847] on 26 June 2023 at 10:15:41 pm'!
 'Description '!
-!provides: 'Dyna' 1 24!
+!provides: 'Dyna' 1 25!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -8,14 +8,24 @@ SystemOrganization addCategory: 'Dyna'!
 SystemOrganization addCategory: 'Dyna-Core'!
 
 
-!classDefinition: #DyBUserDataBrowser category: 'Dyna-UI'!
-BreadcrumbsPane subclass: #DyBUserDataBrowser
+!classDefinition: #DyBEditorVisitor category: 'Dyna-UI'!
+Object subclass: #DyBEditorVisitor
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dyna-UI'!
-!classDefinition: 'DyBUserDataBrowser class' category: 'Dyna-UI'!
-DyBUserDataBrowser class
+!classDefinition: 'DyBEditorVisitor class' category: 'Dyna-UI'!
+DyBEditorVisitor class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBViewerVisitor category: 'Dyna-UI'!
+Object subclass: #DyBViewerVisitor
+	instanceVariableNames: 'visitedModel'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-UI'!
+!classDefinition: 'DyBViewerVisitor class' category: 'Dyna-UI'!
+DyBViewerVisitor class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBAgenda category: 'Dyna-Core'!
@@ -159,6 +169,12 @@ DyTopic class
 	instanceVariableNames: ''!
 
 
+!DyBEditorVisitor commentStamp: '<historical>' prior: 0!
+I visit the model of user data to provide an editor!
+
+!DyBViewerVisitor commentStamp: '<historical>' prior: 0!
+I visit the model of user data to provide a viewer linked to an editor.!
+
 !DyBAgenda commentStamp: '<historical>' prior: 0!
 The place to record teacher/student assignments or other events. It follows the user times slots as described in its related school instances
 !
@@ -205,19 +221,148 @@ A binder contains the pedagogical materials related to a given course.
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
 
-!DyBUserDataBrowser methodsFor: 'viewers' stamp: 'hlsf 6/26/2023 00:01:12'!
-userDataViewer: model
-	| column |
-	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: model user label: 'Owner' translated);
-		addMorph: (self paneFor: model schools label: 'Schools' translated).
-	^ self plugView: column! !
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:48:23'!
+visitUserData: userData
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: userData user mold newPane label: 'Owner' translated);
+		addMorph: (self 
+			editorsFor: userData schools 
+			ofType: DyBSchool 
+			labelled: 'Schools' translated 
+			named: 'school' translated);
+		yourself! !
 
-!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/25/2023 23:55:16'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:03'!
+editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individualLabel
+" A decorated editor to edit a collection of models "
+	| listMorph quickButtons decoratedModel |
+	listMorph := PluggableListMorph 
+		model: (ListModel with: aCollection )		
+		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
+	decoratedModel := DecoratedPane open: listMorph label: pluralLabel .
+	quickButtons := Array new: 3.
+	quickButtons at:1 put: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickAdd: 
+		actionArgument: (Array with: classModel with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current listAddIcon;
+		setBalloonText: ('Add a new {1}' translated format: {individualLabel});
+		yourself).
+	quickButtons at:2 put: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickEdit: 
+		actionArgument: (Array with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current textEditorIcon;
+		setBalloonText: ('Edit the selected {1}' translated format: {individualLabel});
+		yourself).
+	quickButtons at:3 put: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickDelete: 
+		actionArgument: (Array with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current deleteIcon ;
+		setBalloonText: ('Delete the selected {1}' translated format: {individualLabel});
+		yourself).	
+	decoratedModel quickButtons: quickButtons.
+	^ decoratedModel! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:14'!
+quickAdd: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the class of the object to instantiate
+3. the decorated pane
+4. the listMorph
+"
+ | objectClass decorator listModel listMorph newObject objectMold objectPane quickButtons |
+	objectClass := args first.
+	decorator := args second.
+	listMorph := args third .
+	listModel := listMorph model.
+	quickButtons := decorator quickButtons.
+	newObject := objectClass new.
+	objectMold := newObject mold.
+	objectPane := objectMold newPane.
+	objectPane layoutSpec: LayoutSpec useAll.
+	objectPane 
+		actionOnAccept: [
+			objectMold validate.
+			objectMold isValid ifTrue: [
+				objectMold save.
+				listModel list add: newObject .
+				decorator replaceSubmorph: objectPane by: listMorph.
+				quickButtons submorphsDo: #lockUnlockMorph.
+				listModel changed: #list]					
+			];
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:39'!
+quickDelete: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the decorated pane
+2. the listMorph
+"
+ | decorator listModel listMorph objectPane text quickButtons |
+	decorator := args first .
+	listMorph := args second .
+	listModel := listMorph model.
+	listModel listIndex isZero ifTrue: [^ self]. "no selected item"
+	quickButtons := decorator quickButtons.
+	text := TextParagraphMorph contents: ('Are you sure to delete 	"{1}" ?' format: {listModel selectedItem}) :: borderWidth: 0; color: Color transparent.
+	objectPane := nil.
+	objectPane := PluggablePane open: [text] view: #value accept:[
+		listModel list remove: listModel selectedItem.
+		decorator replaceSubmorph: objectPane by: listMorph.
+		quickButtons submorphsDo: #lockUnlockMorph.
+		listModel changed: #list]				.
+	objectPane
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	objectPane layoutSpec: LayoutSpec useAll.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:48'!
+quickEdit: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the decorated pane
+2. the listMorph
+"
+ | decorator listModel listMorph objectMold objectPane quickButtons |
+	decorator := args first .
+	listMorph := args second .
+	listModel := listMorph model.
+	listModel listIndex isZero ifTrue: [^ self]. "no selected item"
+	quickButtons := decorator quickButtons.
+	objectMold := listModel selectedItem mold.
+	objectPane := objectMold newPane.
+	objectPane layoutSpec: LayoutSpec useAll.
+	objectPane 
+		actionOnAccept: [
+			objectMold validate.
+			objectMold isValid ifTrue: [
+				objectMold save.
+				decorator replaceSubmorph: objectPane by: listMorph.
+				quickButtons submorphsDo: #lockUnlockMorph.
+				listModel changed: #list]					
+			];
+		actionOnCancel: [
+			decorator replaceSubmorph: objectPane by: listMorph.
+			quickButtons submorphsDo: #lockUnlockMorph]; 
+		buildMorphicWindow.
+	decorator replaceSubmorph: listMorph by: objectPane .
+	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:29:08'!
 paneFor: anObject label: aTitle 
 	^self paneFor: anObject label: aTitle browse: true! !
 
-!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/25/2023 23:56:07'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:29:20'!
 paneFor: anObject label: aTitle browse: canBeBrowsed
 " Present the view of an object in a decorated pane with a title "
 	| viewBuilderMessage attributeView |
@@ -227,7 +372,25 @@ paneFor: anObject label: aTitle browse: canBeBrowsed
 	attributeView := self perform: viewBuilderMessage with: anObject with: canBeBrowsed.
 	^ DecoratedPane open: attributeView label: aTitle ! !
 
-!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/26/2023 00:18:52'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:46:22'!
+plugView: aMorph
+" Add an Edit button to this contents "
+	| viewer |
+	viewer := nil.
+	viewer := PluggablePane 
+		open: [aMorph] 
+		view: #value 
+		accept: 	["Edit me" 
+			viewer owner 
+				replaceSubmorph: viewer 
+				by: (visitedModel accept: DyBEditorVisitor new)			]  ::
+		acceptLabel: 'Edit' translated;
+		buildMorphicWindow ;
+		layoutSpec: LayoutSpec useAll;
+		yourself.
+	^ viewer ! !
+
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 22:07:05'!
 viewFor: anAttribute browse: canBeBrowsed
 " Present a text view of an attribute."
 	| aTextView |
@@ -241,10 +404,10 @@ viewFor: anAttribute browse: canBeBrowsed
 				('Click to browse "{1}".' translated format: {anAttribute printString});			
 			setProperty: #'handlesMouseDown:' 					toValue: [ :ignored | true ];
 			setProperty: #'mouseButton1Up:localPosition:'
-			toValue: [ :event :position | 	self browseTo: anAttribute]].
+			toValue: [ :event :position | visitedModel triggerEvent: #browseTo with: anAttribute]].
 	^ aTextView ! !
 
-!DyBUserDataBrowser methodsFor: 'ui builders' stamp: 'hlsf 6/26/2023 00:18:43'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:29:53'!
 viewsFor: aCollection browse: canBeBrowsed
 " Present a column of text views for each item of the collection"
 	| column |
@@ -257,6 +420,15 @@ viewsFor: aCollection browse: canBeBrowsed
 			addMorph: 	(self viewFor: anAttribute browse: canBeBrowsed )		 
 			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
 	^ column! !
+
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:43:51'!
+visitUserData: userData
+	| column |
+	visitedModel := userData.
+	column := LayoutMorph newColumn.
+	column 	addMorph: (self paneFor: userData user label: 'Owner' translated);
+		addMorph: (self paneFor: userData schools label: 'Schools' translated).
+	^ self plugView: column! !
 
 !DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:46:38'!
 initialize
@@ -788,6 +960,16 @@ schools
 !DyBUserData methodsFor: 'accessing' stamp: 'hlsf 6/25/2023 23:54:03'!
 user
 	^ user! !
+
+!DyBUserData methodsFor: 'printing' stamp: 'hlsf 6/26/2023 20:50:48'!
+printOn: str
+	user firstName 
+		ifNotNil:  [:firstName | '{1}''s Dynabook' translated format: {firstName}]
+		ifNil: [super printOn: str]! !
+
+!DyBUserData methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:28:11'!
+accept: aVisitor
+	^ aVisitor visitUserData: self! !
 
 !DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:55'!
 end
