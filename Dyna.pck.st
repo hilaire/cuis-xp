@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 26 June 2023 at 10:15:41 pm'!
+'From Cuis 6.0 [latest update: #5847] on 28 June 2023 at 12:28:15 am'!
 'Description '!
-!provides: 'Dyna' 1 25!
+!provides: 'Dyna' 1 27!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -221,10 +221,24 @@ A binder contains the pedagogical materials related to a given course.
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:48:23'!
-visitUserData: userData
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:20:37'!
+visitTeacher: teacher
 	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: userData user mold newPane label: 'Owner' translated);
+		addMorph: (DecoratedPane open: teacher mold newPane label: 'Teacher' translated);
+		addMorph: (self 
+			editorsFor: teacher classGroups 
+			ofType: DyBClassGroup 
+			labelled: 'Class groups' translated 
+			named: 'class' translated);
+		yourself! !
+
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:07:05'!
+visitUserData: userData
+| mold |
+	mold := userData user mold.
+	mold when: #edited send: #triggerEvent: to: userData with: #edited.
+	^ LayoutMorph newColumn
+		addMorph: (DecoratedPane open: mold newPane label: 'Owner' translated);
 		addMorph: (self 
 			editorsFor: userData schools 
 			ofType: DyBSchool 
@@ -420,6 +434,14 @@ viewsFor: aCollection browse: canBeBrowsed
 			addMorph: 	(self viewFor: anAttribute browse: canBeBrowsed )		 
 			layoutSpec: (LayoutSpec new offAxisEdgeWeight: #columnLeft) ].
 	^ column! !
+
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:27:16'!
+visitTeacher: teacher
+	| column |
+	visitedModel := teacher .
+	column := LayoutMorph newColumn.
+	column 	addMorph: (self paneFor: teacher classGroups label: 'Classes taught' translated).
+	^ self plugView: column! !
 
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:43:51'!
 visitUserData: userData
@@ -794,7 +816,7 @@ printOn: str
 			space;
 			nextPutAll: lastName]! !
 
-!DyBPerson methodsFor: 'ui' stamp: 'hlsf 6/18/2023 22:29:05'!
+!DyBPerson methodsFor: 'ui' stamp: 'hlsf 6/27/2023 23:51:48'!
 mold
 	| mold |
 	mold := Mold new.
@@ -810,7 +832,7 @@ mold
 		label: 'Email' translated;
 		on: #email of: self;
 		beRequired.
-	mold when: #edited send: #triggerEvent: to: self with: #edited.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.		
 	^ mold! !
 
 !DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
@@ -828,13 +850,6 @@ editor
 			named: 'class' translated);
 		yourself! !
 
-!DyBTeacher methodsFor: 'ui' stamp: 'hlsf 6/13/2023 21:27:26'!
-viewer
-	| column |
-	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: classGroups label: 'Classes taught' translated).
-	^ self plugView: column! !
-
 !DyBTeacher methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:52'!
 isTeacher
 	^ true! !
@@ -843,6 +858,14 @@ isTeacher
 initialize
 	super initialize.
 	classGroups := OrderedCollection new! !
+
+!DyBTeacher methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:18:07'!
+accept: aVisitor
+	^ aVisitor visitTeacher: self! !
+
+!DyBTeacher methodsFor: 'accessing' stamp: 'hlsf 6/28/2023 00:19:27'!
+classGroups
+	^ classGroups ! !
 
 !DyBSchool methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:44:06'!
 initialize
@@ -934,8 +957,11 @@ initialize
 	schools := OrderedCollection new.
 	user := DyBTeacher new.! !
 
-!DyBUserData methodsFor: 'ui' stamp: 'hlsf 6/4/2023 18:27:06'!
+!DyBUserData methodsFor: 'ui' stamp: 'hlsf 6/28/2023 00:05:49'!
 editor
+| mold |
+	mold := user mold.
+	mold when: #edited send: #triggerEvent: to: self with: #edited.
 	^ LayoutMorph newColumn
 		addMorph: (DecoratedPane open: user mold newPane label: 'Owner' translated);
 		addMorph: (self 
@@ -961,10 +987,10 @@ schools
 user
 	^ user! !
 
-!DyBUserData methodsFor: 'printing' stamp: 'hlsf 6/26/2023 20:50:48'!
+!DyBUserData methodsFor: 'printing' stamp: 'hlsf 6/28/2023 00:09:47'!
 printOn: str
 	user firstName 
-		ifNotNil:  [:firstName | '{1}''s Dynabook' translated format: {firstName}]
+		ifNotNil:  [:firstName | str nextPutAll: ('{1}''s Dynabook' translated format: {firstName})]
 		ifNil: [super printOn: str]! !
 
 !DyBUserData methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:28:11'!
