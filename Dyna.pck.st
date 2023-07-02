@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 1 July 2023 at 9:40:29 pm'!
+'From Cuis 6.0 [latest update: #5847] on 2 July 2023 at 1:26:01 pm'!
 'Description '!
-!provides: 'Dyna' 1 32!
+!provides: 'Dyna' 1 33!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -221,102 +221,71 @@ A binder contains the pedagogical materials related to a given course.
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 22:06:34'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:34:22'!
 visitClassGroup: class
 | mold |
 	mold := class mold.
 	mold when: #edited send: #triggerEvent: to: class with: #edited.
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Information');
-		addMorph: (DecoratedPane 
-			open: class headTeacher mold newPane label: 'Head teacher' translated);
-		addMorph: (self 
-			editorsFor: class courses 
-			ofType: DyBCourse 
-			labelled: 'Lessons' translated 
-			named: 'lesson' translated);
-		addMorph: (self 
-			editorsFor: class students 
-			ofType: DyBStudent 
-			labelled: 'Students' translated 
-			named: 'student' translated);
-		yourself! !
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Information'.
+		DecoratedPane open: class headTeacher mold newPane label: 'Head teacher' translated.
+		self editorsFor: class courses ofType: DyBCourse 
+			labelled: 'Lessons' translated named: 'lesson' translated.
+		self editorsFor: class students ofType: DyBStudent 
+			labelled: 'Students' translated named: 'student' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/1/2023 09:00:55'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:00'!
 visitCourse: course 
 | mold |
 	mold := course mold.
 	mold when: #edited send: #triggerEvent: to: course with: #edited.
-	^ LayoutMorph newColumn 
-		addMorph: (DecoratedPane open: mold newPane label: 'Information' translated);
-		addMorph: (DecoratedPane open: course teacher mold newPane label: 'Teacher' translated);
-		addMorph: (self
-			editorsFor: course courseHours 
-			ofType: DyBCourseHour 
-			labelled:  'Periods' translated
-			named: 'period' translated);
-		yourself ! !
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Information' translated.
+		DecoratedPane open: course teacher mold newPane label: 'Teacher' translated.
+		self editorsFor: course courseHours ofType: DyBCourseHour 
+			labelled:  'Periods' translated named: 'period' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/1/2023 20:32:29'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:23'!
 visitCourseHour: courseHour
 | mold |
 	mold := courseHour mold: (DyBUserData schoolOf: courseHour).
 	mold when: #edited send: #triggerEvent: to: courseHour with: #edited.
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Information' translated);
-		yourself! !
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Information' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 21:52:45'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:31:32'!
 visitSchool: school 
 | mold |
 	mold := school mold.
 	mold when: #edited send: #triggerEvent: to: school with: #edited.
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Information' translated);
-		addMorph: (self 
-			editorsFor: school timeSlots 
-			ofType: DyBTimeSlot 
-			labelled: 'Time slots' translated 
-			named: 'time slot' translated);
-		addMorph: (self 
-			editorsFor: school classGroups 
-			ofType: DyBClassGroup 
-			labelled: 'Classes' translated 
-			named: 'class' translated);
-		addMorph: (self 
-			editorsFor: school subjects 
-			ofType: String 
-			labelled: 'Taught subjects' translated 
-			named: 'subject' translated);
-		yourself! !
+	^ self newColumnWith: { 
+		DecoratedPane open: mold newPane label: 'Information' translated.
+		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot 
+			labelled: 'Time slots' translated named: 'time slot' translated.
+		self editorsFor: school classGroups ofType: DyBClassGroup 
+			labelled: 'Classes' translated named: 'class' translated.
+		self editorsFor: school subjects ofType: String 
+			labelled: 'Taught subjects' translated named: 'subject' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 21:54:02'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:53'!
 visitTeacher: teacher
 | mold |
 	mold := teacher mold.
 	mold when: #edited send: #triggerEvent: to: teacher with: #edited.
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Teacher' translated);
-		addMorph: (self 
-			editorsFor: teacher classGroups 
-			ofType: DyBClassGroup 
-			labelled: 'Class groups' translated 
-			named: 'class' translated);
-		yourself! !
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Teacher' translated.
+		self editorsFor: teacher classGroups ofType: DyBClassGroup 
+			labelled: 'Class groups' translated named: 'class' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 21:20:48'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:33:30'!
 visitUserData: userData
 | mold |
 	mold := userData user mold.
 	mold when: #edited send: #triggerEvent: to: userData with: #edited.
-	^ LayoutMorph newColumn
-		addMorph: (DecoratedPane open: mold newPane label: 'Owner' translated);
-		addMorph: (self 
-			editorsFor: userData schools 
-			ofType: DyBSchool 
-			labelled: 'Schools' translated 
-			named: 'school' translated);
-		yourself! !
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Owner' translated.
+		self editorsFor: userData schools ofType: DyBSchool 
+			labelled: 'Schools' translated named: 'school' translated }! !
 
 !DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:03'!
 editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individualLabel
@@ -350,6 +319,14 @@ editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individu
 		yourself).	
 	decoratedModel quickButtons: quickButtons.
 	^ decoratedModel! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/2/2023 13:25:00'!
+newColumnWith: morphs
+| column |
+	column := LayoutMorph newColumn 			addMorphs: morphs.
+	column morphExtent: column minimumExtent.
+	"column borderWidth: 2; borderColor: Color red."
+	^ column ! !
 
 !DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 18:15:52'!
 quickAdd: args
@@ -466,7 +443,7 @@ paneFor: anObject label: aTitle browse: canBeBrowsed
 	attributeView morphWidth: scroller viewableExtent x.
 	^ DecoratedPane open: scroller label: aTitle ! !
 
-!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:46:22'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/2/2023 13:03:28'!
 plugView: aMorph
 " Add an Edit button to this contents "
 	| viewer |
@@ -476,8 +453,8 @@ plugView: aMorph
 		view: #value 
 		accept: 	["Edit me" 
 			viewer owner 
-				replaceSubmorph: viewer 
-				by: (visitedModel accept: DyBEditorVisitor new)			]  ::
+				replaceView: viewer 
+				byView: (visitedModel accept: DyBEditorVisitor new)			]  ::
 		acceptLabel: 'Edit' translated;
 		buildMorphicWindow ;
 		layoutSpec: LayoutSpec useAll;
@@ -501,7 +478,7 @@ viewFor: anAttribute browse: canBeBrowsed
 			toValue: [ :event :position | visitedModel triggerEvent: #browseTo with: anAttribute]].
 	^ aTextView ! !
 
-!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 21:26:20'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/2/2023 12:22:30'!
 viewsFor: aCollection browse: canBeBrowsed
 " Present a column of text views for each item of the collection"
 	| column |
@@ -513,6 +490,7 @@ viewsFor: aCollection browse: canBeBrowsed
 		column 
 			addMorph: 	(self viewFor: anAttribute browse: canBeBrowsed )		 
 			layoutSpec: (LayoutSpec keepMorphExtent offAxisEdgeWeight: #columnLeft) ].
+	column morphExtent: column minimumExtent.
 	^ column! !
 
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 22:02:24'!
