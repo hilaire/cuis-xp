@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 2 July 2023 at 1:26:01 pm'!
+'From Cuis 6.0 [latest update: #5847] on 3 July 2023 at 12:30:50 pm'!
 'Description '!
-!provides: 'Dyna' 1 33!
+!provides: 'Dyna' 1 35!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -120,12 +120,22 @@ DyBTeacher class
 
 !classDefinition: #DyBSchool category: 'Dyna-Core'!
 Object subclass: #DyBSchool
-	instanceVariableNames: 'name phone email timeSlots subjects classGroups'
+	instanceVariableNames: 'name phone email timeSlots classGroups'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBSchool class' category: 'Dyna-Core'!
 DyBSchool class
+	instanceVariableNames: ''!
+
+!classDefinition: #DyBSubject category: 'Dyna-Core'!
+Object subclass: #DyBSubject
+	instanceVariableNames: 'name'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-Core'!
+!classDefinition: 'DyBSubject class' category: 'Dyna-Core'!
+DyBSubject class
 	instanceVariableNames: ''!
 
 !classDefinition: #DyBTimeSlot category: 'Dyna-Core'!
@@ -183,7 +193,7 @@ The place to record teacher/student assignments or other events. It follows the 
 It describes a class: its number, the list of its students, taught courses, etc.
 !
 
-!DyBCourse commentStamp: '<historical>' prior: 0!
+!DyBCourse commentStamp: 'hlsf 7/3/2023 11:30:49' prior: 0!
 I describe a course of a teacher or a course attended by a student:
 - subject: the taught topic (Math, History,...)
 - color: distinctive color of the course
@@ -234,7 +244,7 @@ visitClassGroup: class
 		self editorsFor: class students ofType: DyBStudent 
 			labelled: 'Students' translated named: 'student' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:00'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:33:33'!
 visitCourse: course 
 | mold |
 	mold := course mold.
@@ -245,7 +255,7 @@ visitCourse: course
 		self editorsFor: course courseHours ofType: DyBCourseHour 
 			labelled:  'Periods' translated named: 'period' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:23'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 23:59:42'!
 visitCourseHour: courseHour
 | mold |
 	mold := courseHour mold: (DyBUserData schoolOf: courseHour).
@@ -253,7 +263,7 @@ visitCourseHour: courseHour
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:31:32'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:33:00'!
 visitSchool: school 
 | mold |
 	mold := school mold.
@@ -263,9 +273,7 @@ visitSchool: school
 		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot 
 			labelled: 'Time slots' translated named: 'time slot' translated.
 		self editorsFor: school classGroups ofType: DyBClassGroup 
-			labelled: 'Classes' translated named: 'class' translated.
-		self editorsFor: school subjects ofType: String 
-			labelled: 'Taught subjects' translated named: 'subject' translated }! !
+			labelled: 'Classes' translated named: 'class' translated }! !
 
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:53'!
 visitTeacher: teacher
@@ -320,12 +328,11 @@ editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individu
 	decoratedModel quickButtons: quickButtons.
 	^ decoratedModel! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/2/2023 13:25:00'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 00:15:24'!
 newColumnWith: morphs
 | column |
 	column := LayoutMorph newColumn 			addMorphs: morphs.
 	column morphExtent: column minimumExtent.
-	"column borderWidth: 2; borderColor: Color red."
 	^ column ! !
 
 !DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 18:15:52'!
@@ -364,7 +371,7 @@ quickAdd: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:39'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 12:00:31'!
 quickDelete: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the decorated pane
@@ -461,7 +468,7 @@ plugView: aMorph
 		yourself.
 	^ viewer ! !
 
-!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 21:32:06'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 12:25:09'!
 viewFor: anAttribute browse: canBeBrowsed
 " Present a text view of an attribute."
 	| aTextView |
@@ -469,6 +476,7 @@ viewFor: anAttribute browse: canBeBrowsed
 		color: Color transparent;
 		borderWidth: 0;
 		yourself.
+	aTextView morphExtent: aTextView minimumExtent.
 	canBeBrowsed ifTrue: [
 		aTextView 
 			setBalloonText: 
@@ -478,7 +486,7 @@ viewFor: anAttribute browse: canBeBrowsed
 			toValue: [ :event :position | visitedModel triggerEvent: #browseTo with: anAttribute]].
 	^ aTextView ! !
 
-!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/2/2023 12:22:30'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 12:30:05'!
 viewsFor: aCollection browse: canBeBrowsed
 " Present a column of text views for each item of the collection"
 	| column |
@@ -524,23 +532,22 @@ visitCourseHour: courseHour
 		addMorph: (self paneFor: slots selectedItems label: 'Period(s)' translated browse: false).
 	^ self plugView: column	! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 21:49:03'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:32:44'!
 visitSchool: school
 	| column |
 	visitedModel := school .
 	column := LayoutMorph newColumn.
 	column 	
 		addMorph: (self paneFor: school timeSlots label: 'Time slots' translated browse: false);
-		addMorph: (self paneFor: school subjects label: 'Taught subjects' translated);
 		addMorph: (self paneFor: school classGroups label: 'Classes' translated).
 	^ self plugView: column	! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:27:16'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:37:12'!
 visitTeacher: teacher
 	| column |
 	visitedModel := teacher .
 	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: teacher classGroups label: 'Classes taught' translated).
+	column 	addMorph: (self paneFor: teacher classGroups label: 'Taught classes ' translated).
 	^ self plugView: column! !
 
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:43:51'!
@@ -609,7 +616,7 @@ initialize
 	courseHours := OrderedCollection new.
 	teacher := DyBTeacher new.! !
 
-!DyBCourse methodsFor: 'ui' stamp: 'hlsf 6/30/2023 21:15:19'!
+!DyBCourse methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:30:36'!
 mold
 	| mold |
 	mold := Mold new.
@@ -617,8 +624,7 @@ mold
 		label: 'Subject' translated;
 		on: #subject of: self;
 		beRequired.
-	^ mold
-		! !
+	^ mold! !
 
 !DyBCourse methodsFor: 'accessing' stamp: 'hlsf 7/1/2023 08:52:47'!
 courseHours
@@ -755,7 +761,7 @@ printOn: str
 			space;
 			nextPutAll: lastName]! !
 
-!DyBPerson methodsFor: 'ui' stamp: 'hlsf 6/30/2023 21:14:46'!
+!DyBPerson methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:36:22'!
 mold
 	| mold |
 	mold := Mold new.
@@ -769,8 +775,7 @@ mold
 		beRequired.
 	mold stringField
 		label: 'Email' translated;
-		on: #email of: self;
-		beRequired.
+		on: #email of: self.
 	^ mold! !
 
 !DyBStudent methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:38'!
@@ -794,32 +799,16 @@ accept: aVisitor
 classGroups
 	^ classGroups ! !
 
-!DyBSchool methodsFor: 'initialization' stamp: 'hlsf 7/1/2023 12:53:11'!
+!DyBSchool methodsFor: 'initialization' stamp: 'hlsf 7/3/2023 10:40:03'!
 initialize
 	super initialize .
 	timeSlots := SortedCollection new.
-	subjects := OrderedCollection new.
+	subjects := SortedCollection new.
 	classGroups := OrderedCollection new! !
 
 !DyBSchool methodsFor: 'accessing' stamp: 'hlsf 6/30/2023 21:49:32'!
 classGroups
 	^ classGroups ! !
-
-!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:35'!
-email
-	^ email! !
-
-!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:30'!
-email: aString
-	email := aString ! !
-
-!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:08'!
-phone
-	^ phone! !
-
-!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:55:19'!
-phone: aString
-	phone := aString ! !
 
 !DyBSchool methodsFor: 'accessing' stamp: 'hlsf 5/23/2023 20:54:57'!
 schoolName
@@ -829,15 +818,11 @@ schoolName
 schoolName: aString
 	name := aString ! !
 
-!DyBSchool methodsFor: 'accessing' stamp: 'hlsf 6/30/2023 21:48:55'!
-subjects
-	^ subjects ! !
-
 !DyBSchool methodsFor: 'accessing' stamp: 'hlsf 6/30/2023 21:48:48'!
 timeSlots
 	^ timeSlots ! !
 
-!DyBSchool methodsFor: 'ui' stamp: 'hlsf 6/30/2023 21:15:26'!
+!DyBSchool methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:31:58'!
 mold
 	| mold |
 	mold := Mold new.
@@ -845,12 +830,6 @@ mold
 		label: 'School name' translated;
 		on: #schoolName of: self;
 		beRequired.
-	mold stringField
-		label: 'Phone' translated;
-		on: #phone of: self.
-	mold stringField
-		label: 'Email' translated;
-		on: #email of: self.
 	^ mold! !
 
 !DyBSchool methodsFor: 'printing' stamp: 'hlsf 6/1/2023 19:52:41'!
@@ -861,6 +840,30 @@ printOn: str
 !DyBSchool methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 21:49:08'!
 accept: aVisitor 
 	^ aVisitor visitSchool: self! !
+
+!DyBSubject methodsFor: 'ui' stamp: 'hlsf 7/3/2023 10:58:09'!
+mold
+	| mold |
+	mold := Mold new.
+	mold stringField
+		label: 'Name' translated;
+		on: #property of: self;
+		beRequired.
+	^ mold! !
+
+!DyBSubject methodsFor: 'accessing' stamp: 'hlsf 7/3/2023 10:58:28'!
+property
+	^ name! !
+
+!DyBSubject methodsFor: 'accessing' stamp: 'hlsf 7/3/2023 10:58:38'!
+property: aString
+	name := aString ! !
+
+!DyBSubject methodsFor: 'printing' stamp: 'hlsf 7/3/2023 11:00:41'!
+printOn: str
+	name 
+		ifNotNil:  [str nextPutAll: name]
+		ifNil: [super printOn: str]! !
 
 !DyBTimeSlot methodsFor: 'accessing' stamp: 'hlsf 5/22/2023 19:58:55'!
 end
