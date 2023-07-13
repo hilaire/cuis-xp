@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 3 July 2023 at 12:30:50 pm'!
+'From Cuis 6.0 [latest update: #5847] on 13 July 2023 at 9:44:39 am'!
 'Description '!
-!provides: 'Dyna' 1 35!
+!provides: 'Dyna' 1 39!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -100,7 +100,7 @@ DyBPerson class
 
 !classDefinition: #DyBStudent category: 'Dyna-Core'!
 DyBPerson subclass: #DyBStudent
-	instanceVariableNames: 'classGroup'
+	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dyna-Core'!
@@ -110,7 +110,7 @@ DyBStudent class
 
 !classDefinition: #DyBTeacher category: 'Dyna-Core'!
 DyBPerson subclass: #DyBTeacher
-	instanceVariableNames: 'classGroups'
+	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Dyna-Core'!
@@ -151,7 +151,7 @@ DyBTimeSlot class
 !classDefinition: #DyBUserData category: 'Dyna-Core'!
 Object subclass: #DyBUserData
 	instanceVariableNames: 'user schools agenda'
-	classVariableNames: ''
+	classVariableNames: 'Current'
 	poolDictionaries: ''
 	category: 'Dyna-Core'!
 !classDefinition: 'DyBUserData class' category: 'Dyna-Core'!
@@ -205,12 +205,6 @@ Describes one or more contiguous teaching periods.
 
 timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
 
-!DyBStudent commentStamp: '<historical>' prior: 0!
-- classGroup: the class the student belong to!
-
-!DyBTeacher commentStamp: '<historical>' prior: 0!
-- classGroups: the classes the teacher teaches!
-
 !DyBSchool commentStamp: '<historical>' prior: 0!
 Description of the user's educational institutions. Possibly several per user.
 !
@@ -220,6 +214,7 @@ Describe the organization of the teaching periods in a school. There are general
 Example of a time slot: P2, 9:25am, 10:10am!
 
 !DyBUserData commentStamp: '<historical>' prior: 0!
+I am a Singleton, the root of the user data, both administrative and pedagogical.
 - user: a teacher or student 
 - schools: collection of schools the student is enrolled in or the teacher teaches in
 - agenda of the user!
@@ -263,27 +258,25 @@ visitCourseHour: courseHour
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:33:00'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 15:14:37'!
 visitSchool: school 
 | mold |
 	mold := school mold.
 	mold when: #edited send: #triggerEvent: to: school with: #edited.
 	^ self newColumnWith: { 
 		DecoratedPane open: mold newPane label: 'Information' translated.
-		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot 
-			labelled: 'Time slots' translated named: 'time slot' translated.
 		self editorsFor: school classGroups ofType: DyBClassGroup 
-			labelled: 'Classes' translated named: 'class' translated }! !
+			labelled: 'Classes' translated named: 'class' translated.
+		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot 
+			labelled: 'Time slots' translated named: 'time slot' translated. }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:35:53'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/12/2023 11:52:24'!
 visitTeacher: teacher
 | mold |
 	mold := teacher mold.
 	mold when: #edited send: #triggerEvent: to: teacher with: #edited.
 	^ self newColumnWith: {
-		DecoratedPane open: mold newPane label: 'Teacher' translated.
-		self editorsFor: teacher classGroups ofType: DyBClassGroup 
-			labelled: 'Class groups' translated named: 'class' translated }! !
+		DecoratedPane open: mold newPane label: 'Teacher' translated }! !
 
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:33:30'!
 visitUserData: userData
@@ -328,21 +321,21 @@ editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individu
 	decoratedModel quickButtons: quickButtons.
 	^ decoratedModel! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 00:15:24'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 21:47:18'!
 newColumnWith: morphs
 | column |
 	column := LayoutMorph newColumn 			addMorphs: morphs.
 	column morphExtent: column minimumExtent.
 	^ column ! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 18:15:52'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/12/2023 11:41:01'!
 quickAdd: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the class of the object to instantiate
 3. the decorated pane
 4. the listMorph
 "
- | objectClass decorator listModel listMorph newObject objectMold objectPane quickButtons |
+ | school objectClass decorator listModel listMorph newObject objectMold objectPane quickButtons |
 	objectClass := args first.
 	decorator := args second.
 	listMorph := args third .
@@ -350,7 +343,10 @@ quickAdd: args
 	quickButtons := decorator quickButtons.
 	newObject := objectClass new.
 	objectMold := (newObject respondsTo: #mold:) 
-		ifTrue: [newObject mold: (DyBUserData schoolOf: listModel list)] 
+		ifTrue: [
+			school := DyBUserData schoolOf: listModel list.
+			school ifNil: [^ self] .
+			newObject mold: school] 
 		ifFalse: [newObject mold].
 	objectPane := objectMold newPane.
 	objectPane layoutSpec: LayoutSpec useAll.
@@ -371,7 +367,7 @@ quickAdd: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 12:00:31'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/13/2023 09:36:37'!
 quickDelete: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the decorated pane
@@ -532,31 +528,30 @@ visitCourseHour: courseHour
 		addMorph: (self paneFor: slots selectedItems label: 'Period(s)' translated browse: false).
 	^ self plugView: column	! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:32:44'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 15:14:16'!
 visitSchool: school
 	| column |
 	visitedModel := school .
 	column := LayoutMorph newColumn.
 	column 	
-		addMorph: (self paneFor: school timeSlots label: 'Time slots' translated browse: false);
-		addMorph: (self paneFor: school classGroups label: 'Classes' translated).
+		addMorph: (self paneFor: school classGroups label: 'Classes' translated);
+		addMorph: (self paneFor: school timeSlots label: 'Time slots' translated browse: false)		.
 	^ self plugView: column	! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:37:12'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 15:00:42'!
 visitTeacher: teacher
 	| column |
 	visitedModel := teacher .
 	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: teacher classGroups label: 'Taught classes ' translated).
+	column 	addMorph: (self paneFor: teacher classGroups label: 'Classes ' translated).
 	^ self plugView: column! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/26/2023 21:43:51'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/12/2023 11:53:31'!
 visitUserData: userData
 	| column |
 	visitedModel := userData.
 	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: userData user label: 'Owner' translated);
-		addMorph: (self paneFor: userData schools label: 'Schools' translated).
+	column 	addMorph: (self paneFor: userData schools label: 'Schools' translated).
 	^ self plugView: column! !
 
 !DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 5/23/2023 20:46:38'!
@@ -786,18 +781,9 @@ isStudent
 isTeacher
 	^ true! !
 
-!DyBTeacher methodsFor: 'initialization' stamp: 'hlsf 6/4/2023 18:08:32'!
-initialize
-	super initialize.
-	classGroups := OrderedCollection new! !
-
 !DyBTeacher methodsFor: 'visiting' stamp: 'hlsf 6/28/2023 00:18:07'!
 accept: aVisitor
 	^ aVisitor visitTeacher: self! !
-
-!DyBTeacher methodsFor: 'accessing' stamp: 'hlsf 6/28/2023 00:19:27'!
-classGroups
-	^ classGroups ! !
 
 !DyBSchool methodsFor: 'initialization' stamp: 'hlsf 7/3/2023 10:40:03'!
 initialize
@@ -947,13 +933,20 @@ printOn: str
 accept: aVisitor
 	^ aVisitor visitUserData: self! !
 
-!DyBUserData class methodsFor: 'as yet unclassified' stamp: 'hlsf 7/1/2023 11:26:59'!
+!DyBUserData class methodsFor: 'accessing' stamp: 'hlsf 7/13/2023 09:42:21'!
+current
+	^ Current ifNil: [Current := self basicNew initialize]! !
+
+!DyBUserData class methodsFor: 'accessing' stamp: 'hlsf 7/13/2023 09:44:29'!
 schoolOf: anObject
 "Search the school tree this object belongs to"
-	DyBUserData allInstances do: [:userData | 
-		userData schools do: [:school |			
-			(school treePointsTo: anObject			) ifTrue: [^ school] ] ].
+	self current  schools do: [:school |			
+		(school treePointsTo: anObject			) ifTrue: [^ school] ].
 	^ nil! !
+
+!DyBUserData class methodsFor: 'instance creation' stamp: 'hlsf 7/13/2023 09:43:22'!
+new
+	self error: 'Class ', self name, ' has only one instance'! !
 
 !ProtoObject methodsFor: '*Dyna' stamp: 'hlsf 7/1/2023 12:19:17'!
 treePointsTo: anObject
