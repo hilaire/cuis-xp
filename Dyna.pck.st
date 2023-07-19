@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 13 July 2023 at 9:44:39 am'!
+'From Cuis 6.0 [latest update: #5847] on 15 July 2023 at 11:40:35 am'!
 'Description '!
-!provides: 'Dyna' 1 39!
+!provides: 'Dyna' 1 40!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -201,9 +201,10 @@ I describe a course of a teacher or a course attended by a student:
 - binder: a holder of the pedagogical documents!
 
 !DyBCourseHour commentStamp: '<historical>' prior: 0!
-Describes one or more contiguous teaching periods.
+Describes one or more contiguous teaching periods.!
 
-timeSlots := ListMultiModel with: aSchool timeSlots :: selectedIndexes: #()!
+!DyBData commentStamp: '<historical>' prior: 0!
+An helper class to provide static data!
 
 !DyBSchool commentStamp: '<historical>' prior: 0!
 Description of the user's educational institutions. Possibly several per user.
@@ -226,7 +227,7 @@ A binder contains the pedagogical materials related to a given course.
 !DyTopic commentStamp: '<historical>' prior: 0!
 Pedagogical document grouped in one topic.!
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:34:22'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:39:35'!
 visitClassGroup: class
 | mold |
 	mold := class mold.
@@ -234,12 +235,10 @@ visitClassGroup: class
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information'.
 		DecoratedPane open: class headTeacher mold newPane label: 'Head teacher' translated.
-		self editorsFor: class courses ofType: DyBCourse 
-			labelled: 'Lessons' translated named: 'lesson' translated.
-		self editorsFor: class students ofType: DyBStudent 
-			labelled: 'Students' translated named: 'student' translated }! !
+		self editorsFor: class courses ofType: DyBCourse .
+		self editorsFor: class students ofType: DyBStudent }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 11:33:33'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:39:46'!
 visitCourse: course 
 | mold |
 	mold := course mold.
@@ -247,8 +246,7 @@ visitCourse: course
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information' translated.
 		DecoratedPane open: course teacher mold newPane label: 'Teacher' translated.
-		self editorsFor: course courseHours ofType: DyBCourseHour 
-			labelled:  'Periods' translated named: 'period' translated }! !
+		self editorsFor: course courseHours ofType: DyBCourseHour }! !
 
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 23:59:42'!
 visitCourseHour: courseHour
@@ -258,17 +256,15 @@ visitCourseHour: courseHour
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/3/2023 15:14:37'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:39:56'!
 visitSchool: school 
 | mold |
 	mold := school mold.
 	mold when: #edited send: #triggerEvent: to: school with: #edited.
 	^ self newColumnWith: { 
 		DecoratedPane open: mold newPane label: 'Information' translated.
-		self editorsFor: school classGroups ofType: DyBClassGroup 
-			labelled: 'Classes' translated named: 'class' translated.
-		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot 
-			labelled: 'Time slots' translated named: 'time slot' translated. }! !
+		self editorsFor: school classGroups ofType: DyBClassGroup.
+		self 	editorsFor: school timeSlots 			ofType: DyBTimeSlot. }! !
 
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/12/2023 11:52:24'!
 visitTeacher: teacher
@@ -278,46 +274,61 @@ visitTeacher: teacher
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Teacher' translated }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 12:33:30'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:40:02'!
 visitUserData: userData
 | mold |
 	mold := userData user mold.
 	mold when: #edited send: #triggerEvent: to: userData with: #edited.
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Owner' translated.
-		self editorsFor: userData schools ofType: DyBSchool 
-			labelled: 'Schools' translated named: 'school' translated }! !
+		self editorsFor: userData schools ofType: DyBSchool }! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:50:03'!
-editorsFor: aCollection ofType: classModel labelled: pluralLabel named: individualLabel
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/15/2023 11:39:20'!
+editorsFor: aCollection ofType: classModel 
 " A decorated editor to edit a collection of models "
 	| listMorph quickButtons decoratedModel |
 	listMorph := PluggableListMorph 
 		model: (ListModel with: aCollection )		
 		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
-	decoratedModel := DecoratedPane open: listMorph label: pluralLabel .
-	quickButtons := Array new: 3.
-	quickButtons at:1 put: (PluggableButtonMorph 
+	decoratedModel := DecoratedPane open: listMorph label: classModel pluralLabel .
+	quickButtons := OrderedCollection new.
+	quickButtons add: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickAdd: 
 		actionArgument: (Array with: classModel with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current listAddIcon;
-		setBalloonText: ('Add a new {1}' translated format: {individualLabel});
+		setBalloonText: ('Add a new {1}' translated format: {classModel label});
 		yourself).
-	quickButtons at:2 put: (PluggableButtonMorph 
+	quickButtons add: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickEdit: 
 		actionArgument: (Array with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current textEditorIcon;
-		setBalloonText: ('Edit the selected {1}' translated format: {individualLabel});
+		setBalloonText: ('Edit the selected {1}' translated format: {classModel label});
 		yourself).
-	quickButtons at:3 put: (PluggableButtonMorph 
+	quickButtons add: (PluggableButtonMorph 
 		model: self 		stateGetter: nil stateArgument: nil 	action: #quickDelete: 
 		actionArgument: (Array with: decoratedModel with: listMorph)
 		label: nil ::
 		icon: Theme current deleteIcon ;
-		setBalloonText: ('Delete the selected {1}' translated format: {individualLabel});
+		setBalloonText: ('Delete the selected {1}' translated format: {classModel label });
 		yourself).	
+	(classModel respondsTo: #loadFromFile) ifTrue: [
+		quickButtons add: (PluggableButtonMorph 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickLoad: 
+			actionArgument: (Array with: decoratedModel with: listMorph)
+			label: nil ::
+			icon: Theme current openIcon ;
+			setBalloonText: 'Load from file' translated;
+			yourself) ]. 	
+	(classModel respondsTo: #saveToFile) ifTrue: [
+		quickButtons add: (PluggableButtonMorph 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickSave: 
+			actionArgument: (Array with: decoratedModel with: listMorph)
+			label: nil ::
+			icon: Theme current saveIcon ;
+			setBalloonText: 'Save to a file' translated;
+			yourself) ].	
 	decoratedModel quickButtons: quickButtons.
 	^ decoratedModel! !
 
@@ -427,6 +438,22 @@ quickEdit: args
 		buildMorphicWindow.
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/13/2023 11:18:45'!
+quickLoad: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the class of the object to instantiate
+3. the decorated pane
+4. the listMorph
+"! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/13/2023 11:18:50'!
+quickSave: args
+" args is a collection of object to operate the behavior of the quick button, in the following order:
+1. the class of the object to instantiate
+3. the decorated pane
+4. the listMorph
+"! !
 
 !DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:29:08'!
 paneFor: anObject label: aTitle 
@@ -559,7 +586,7 @@ initialize
 	super initialize.
 	assignments := OrderedCollection new! !
 
-!DyBClassGroup methodsFor: 'ui' stamp: 'hlsf 6/30/2023 21:15:15'!
+!DyBClassGroup methodsFor: 'user interface' stamp: 'hlsf 6/30/2023 21:15:15'!
 mold
 	| mold |
 	mold := Mold new.
@@ -605,13 +632,21 @@ initialize
 accept: aVisitor 
 	^ aVisitor visitClassGroup: self! !
 
+!DyBClassGroup class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:36:49'!
+label
+	^ 'class' translated! !
+
+!DyBClassGroup class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:36:59'!
+pluralLabel
+	^ 'Classes' translated! !
+
 !DyBCourse methodsFor: 'initialization' stamp: 'hlsf 6/19/2023 22:20:34'!
 initialize
 	super initialize.
 	courseHours := OrderedCollection new.
 	teacher := DyBTeacher new.! !
 
-!DyBCourse methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:30:36'!
+!DyBCourse methodsFor: 'user interface' stamp: 'hlsf 7/3/2023 11:30:36'!
 mold
 	| mold |
 	mold := Mold new.
@@ -647,7 +682,15 @@ printOn: aStream
 accept: aVisitor
 	^ aVisitor visitCourse: self! !
 
-!DyBCourseHour methodsFor: 'ui' stamp: 'hlsf 7/1/2023 18:33:27'!
+!DyBCourse class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:34:16'!
+label
+	^  'lesson' translated! !
+
+!DyBCourse class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:33:49'!
+pluralLabel
+	^  'Lessons' translated! !
+
+!DyBCourseHour methodsFor: 'user interface' stamp: 'hlsf 7/1/2023 18:33:27'!
 mold: school
 	| mold |
 	mold := Mold new.
@@ -711,6 +754,14 @@ initialize
 	dayOfWeek := 0.
 	timeSlots := OrderedCollection new! !
 
+!DyBCourseHour class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:35:55'!
+label
+	^ 'period' translated! !
+
+!DyBCourseHour class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:36:05'!
+pluralLabel
+	^ 'Periods' translated! !
+
 !DyBData class methodsFor: 'as yet unclassified' stamp: 'hlsf 7/1/2023 12:43:42'!
 daysOfWeek
 	^ Week dayNames collect: [:day | day translated]! !
@@ -756,7 +807,7 @@ printOn: str
 			space;
 			nextPutAll: lastName]! !
 
-!DyBPerson methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:36:22'!
+!DyBPerson methodsFor: 'user interface' stamp: 'hlsf 7/3/2023 11:36:22'!
 mold
 	| mold |
 	mold := Mold new.
@@ -777,6 +828,14 @@ mold
 isStudent
 	^ true! !
 
+!DyBStudent class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:35:08'!
+label
+	^ 'student' translated! !
+
+!DyBStudent class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:35:30'!
+pluralLabel
+	^ 'Students' translated! !
+
 !DyBTeacher methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:52'!
 isTeacher
 	^ true! !
@@ -785,11 +844,10 @@ isTeacher
 accept: aVisitor
 	^ aVisitor visitTeacher: self! !
 
-!DyBSchool methodsFor: 'initialization' stamp: 'hlsf 7/3/2023 10:40:03'!
+!DyBSchool methodsFor: 'initialization' stamp: 'hlsf 7/15/2023 11:08:40'!
 initialize
 	super initialize .
 	timeSlots := SortedCollection new.
-	subjects := SortedCollection new.
 	classGroups := OrderedCollection new! !
 
 !DyBSchool methodsFor: 'accessing' stamp: 'hlsf 6/30/2023 21:49:32'!
@@ -808,7 +866,7 @@ schoolName: aString
 timeSlots
 	^ timeSlots ! !
 
-!DyBSchool methodsFor: 'ui' stamp: 'hlsf 7/3/2023 11:31:58'!
+!DyBSchool methodsFor: 'user interface' stamp: 'hlsf 7/3/2023 11:31:58'!
 mold
 	| mold |
 	mold := Mold new.
@@ -827,7 +885,15 @@ printOn: str
 accept: aVisitor 
 	^ aVisitor visitSchool: self! !
 
-!DyBSubject methodsFor: 'ui' stamp: 'hlsf 7/3/2023 10:58:09'!
+!DyBSchool class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:38:14'!
+label
+	^ 'school' translated! !
+
+!DyBSchool class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:38:22'!
+pluralLabel
+	^ 'Schools' translated! !
+
+!DyBSubject methodsFor: 'user interface' stamp: 'hlsf 7/3/2023 10:58:09'!
 mold
 	| mold |
 	mold := Mold new.
@@ -884,7 +950,7 @@ printOn: aStream
 			aStream 	nextPut: $-.
 			endTime print24: true showSeconds: false on: aStream]! !
 
-!DyBTimeSlot methodsFor: 'ui' stamp: 'hlsf 6/30/2023 21:15:31'!
+!DyBTimeSlot methodsFor: 'user interface' stamp: 'hlsf 6/30/2023 21:15:31'!
 mold
 	| mold start |
 	mold := Mold new.
@@ -908,6 +974,14 @@ mold
 !DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 7/1/2023 12:52:40'!
 <= aTimeSlot
 	^ startTime <= aTimeSlot start! !
+
+!DyBTimeSlot class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:37:26'!
+label
+	^ 'time slot' translated! !
+
+!DyBTimeSlot class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:37:35'!
+pluralLabel
+	^ 'Time slots' translated! !
 
 !DyBUserData methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
