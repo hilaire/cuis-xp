@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5847] on 15 July 2023 at 11:40:35 am'!
+'From Cuis 6.0 [latest update: #5940] on 23 July 2023 at 1:16:21 pm'!
 'Description '!
-!provides: 'Dyna' 1 40!
+!provides: 'Dyna' 1 42!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -283,7 +283,7 @@ visitUserData: userData
 		DecoratedPane open: mold newPane label: 'Owner' translated.
 		self editorsFor: userData schools ofType: DyBSchool }! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/15/2023 11:39:20'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/22/2023 12:00:41'!
 editorsFor: aCollection ofType: classModel 
 " A decorated editor to edit a collection of models "
 	| listMorph quickButtons decoratedModel |
@@ -313,21 +313,21 @@ editorsFor: aCollection ofType: classModel
 		icon: Theme current deleteIcon ;
 		setBalloonText: ('Delete the selected {1}' translated format: {classModel label });
 		yourself).	
-	(classModel respondsTo: #loadFromFile) ifTrue: [
+	(classModel respondsTo: #importFile) ifTrue: [
 		quickButtons add: (PluggableButtonMorph 
-			model: self 		stateGetter: nil stateArgument: nil 	action: #quickLoad: 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickImport: 
 			actionArgument: (Array with: decoratedModel with: listMorph)
 			label: nil ::
 			icon: Theme current openIcon ;
-			setBalloonText: 'Load from file' translated;
+			setBalloonText: 'Import from a file' translated;
 			yourself) ]. 	
-	(classModel respondsTo: #saveToFile) ifTrue: [
+	(classModel respondsTo: #exportFile) ifTrue: [
 		quickButtons add: (PluggableButtonMorph 
-			model: self 		stateGetter: nil stateArgument: nil 	action: #quickSave: 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickExport: 
 			actionArgument: (Array with: decoratedModel with: listMorph)
 			label: nil ::
 			icon: Theme current saveIcon ;
-			setBalloonText: 'Save to a file' translated;
+			setBalloonText: 'Export to a file' translated;
 			yourself) ].	
 	decoratedModel quickButtons: quickButtons.
 	^ decoratedModel! !
@@ -439,16 +439,16 @@ quickEdit: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/13/2023 11:18:45'!
-quickLoad: args
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/22/2023 12:00:41'!
+quickExport: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the class of the object to instantiate
 3. the decorated pane
 4. the listMorph
 "! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/13/2023 11:18:50'!
-quickSave: args
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/22/2023 12:00:27'!
+quickImport: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the class of the object to instantiate
 3. the decorated pane
@@ -491,7 +491,7 @@ plugView: aMorph
 		yourself.
 	^ viewer ! !
 
-!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/3/2023 12:25:09'!
+!DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 7/21/2023 23:21:19'!
 viewFor: anAttribute browse: canBeBrowsed
 " Present a text view of an attribute."
 	| aTextView |
@@ -499,7 +499,6 @@ viewFor: anAttribute browse: canBeBrowsed
 		color: Color transparent;
 		borderWidth: 0;
 		yourself.
-	aTextView morphExtent: aTextView minimumExtent.
 	canBeBrowsed ifTrue: [
 		aTextView 
 			setBalloonText: 
@@ -982,6 +981,18 @@ label
 !DyBTimeSlot class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:37:35'!
 pluralLabel
 	^ 'Time slots' translated! !
+
+!DyBTimeSlot class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/22/2023 12:17:57'!
+importFile
+"Import time slots from a CSV file with header:
+timeSlotName,start, end "
+| reader |
+	reader := NeoCSVReader on: 'FORON-timeSlot.csv' asFileEntry readStream.
+	reader addField ;
+		addFieldConverter: [:s | Time fromString: s];
+		addFieldConverter: [:s | Time fromString: s].
+	reader readHeader = #('timeSlotName' 'start' 'end')
+		ifFalse: [self error: 'Headers should be timeSlotName, start, end']! !
 
 !DyBUserData methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
