@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5940] on 23 July 2023 at 1:16:21 pm'!
+'From Cuis 6.0 [latest update: #5940] on 25 July 2023 at 12:38:13 am'!
 'Description '!
-!provides: 'Dyna' 1 42!
+!provides: 'Dyna' 1 43!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -283,7 +283,7 @@ visitUserData: userData
 		DecoratedPane open: mold newPane label: 'Owner' translated.
 		self editorsFor: userData schools ofType: DyBSchool }! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/22/2023 12:00:41'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/25/2023 00:35:43'!
 editorsFor: aCollection ofType: classModel 
 " A decorated editor to edit a collection of models "
 	| listMorph quickButtons decoratedModel |
@@ -313,10 +313,59 @@ editorsFor: aCollection ofType: classModel
 		icon: Theme current deleteIcon ;
 		setBalloonText: ('Delete the selected {1}' translated format: {classModel label });
 		yourself).	
-	(classModel respondsTo: #importFile) ifTrue: [
+	(classModel respondsTo: #importFile:) ifTrue: [
 		quickButtons add: (PluggableButtonMorph 
 			model: self 		stateGetter: nil stateArgument: nil 	action: #quickImport: 
+			actionArgument: (Array with: classModel with: aCollection with: listMorph)
+			label: nil ::
+			icon: Theme current openIcon ;
+			setBalloonText: 'Import from a file' translated;
+			yourself) ]. 	
+	(classModel respondsTo: #exportFile) ifTrue: [
+		quickButtons add: (PluggableButtonMorph 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickExport: 
 			actionArgument: (Array with: decoratedModel with: listMorph)
+			label: nil ::
+			icon: Theme current saveIcon ;
+			setBalloonText: 'Export to a file' translated;
+			yourself) ].	
+	decoratedModel quickButtons: quickButtons.
+	^ decoratedModel! !
+
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/25/2023 00:35:28'!
+importFileeditorsFor: aCollection ofType: classModel 
+" A decorated editor to edit a collection of models "
+	| listMorph quickButtons decoratedModel |
+	listMorph := PluggableListMorph 
+		model: (ListModel with: aCollection )		
+		listGetter: #list 		indexGetter: #listIndex indexSetter: #listIndex:.
+	decoratedModel := DecoratedPane open: listMorph label: classModel pluralLabel .
+	quickButtons := OrderedCollection new.
+	quickButtons add: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickAdd: 
+		actionArgument: (Array with: classModel with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current listAddIcon;
+		setBalloonText: ('Add a new {1}' translated format: {classModel label});
+		yourself).
+	quickButtons add: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickEdit: 
+		actionArgument: (Array with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current textEditorIcon;
+		setBalloonText: ('Edit the selected {1}' translated format: {classModel label});
+		yourself).
+	quickButtons add: (PluggableButtonMorph 
+		model: self 		stateGetter: nil stateArgument: nil 	action: #quickDelete: 
+		actionArgument: (Array with: decoratedModel with: listMorph)
+		label: nil ::
+		icon: Theme current deleteIcon ;
+		setBalloonText: ('Delete the selected {1}' translated format: {classModel label });
+		yourself).	
+	(classModel respondsTo: #importFile:) ifTrue: [
+		quickButtons add: (PluggableButtonMorph 
+			model: self 		stateGetter: nil stateArgument: nil 	action: #quickImport: 
+			actionArgument: (Array with: classModel with: aCollection with: listMorph)
 			label: nil ::
 			icon: Theme current openIcon ;
 			setBalloonText: 'Import from a file' translated;
@@ -447,13 +496,20 @@ quickExport: args
 4. the listMorph
 "! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/22/2023 12:00:27'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/25/2023 00:36:54'!
 quickImport: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
-1. the class of the object to instantiate
-3. the decorated pane
-4. the listMorph
-"! !
+1. the class of the object to import
+2. the curent collection of this object
+3. the listMorph of the collection
+"
+| importedCollection file |
+	file := (StandardFileMenu new oldFileFrom: DirectoryEntry smalltalkImageDirectory withPattern: '*.csv') startUpWithCaption: 'CSV file to import'.
+	file ifNotNil: [
+		importedCollection := args first importFile: file directory // file name.
+		importedCollection ifNotNil: [ 
+			args second become: importedCollection.
+			args third updateList] ]! !
 
 !DyBViewerVisitor methodsFor: 'ui' stamp: 'hlsf 6/26/2023 21:29:08'!
 paneFor: anObject label: aTitle 
@@ -982,17 +1038,21 @@ label
 pluralLabel
 	^ 'Time slots' translated! !
 
-!DyBTimeSlot class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/22/2023 12:17:57'!
-importFile
+!DyBTimeSlot class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/25/2023 00:31:21'!
+importFile: fileEntry
 "Import time slots from a CSV file with header:
 timeSlotName,start, end "
 | reader |
-	reader := NeoCSVReader on: 'FORON-timeSlot.csv' asFileEntry readStream.
-	reader addField ;
-		addFieldConverter: [:s | Time fromString: s];
-		addFieldConverter: [:s | Time fromString: s].
+	reader := NeoCSVReader on: fileEntry readStream.
 	reader readHeader = #('timeSlotName' 'start' 'end')
-		ifFalse: [self error: 'Headers should be timeSlotName, start, end']! !
+		ifFalse: [self error: 'Headers should be timeSlotName, start, end'].
+	reader 
+		recordClass: self;
+		addField: #slotName:;
+		addField: #start: converter: [:s | Time fromString: s];
+		addField: #end: converter: [:s | Time fromString: s].
+	^ reader upToEnd asOrderedCollection 
+! !
 
 !DyBUserData methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
 initialize
