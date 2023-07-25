@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5940] on 25 July 2023 at 12:38:13 am'!
+'From Cuis 6.0 [latest update: #5940] on 25 July 2023 at 6:59:20 pm'!
 'Description '!
-!provides: 'Dyna' 1 43!
+!provides: 'Dyna' 1 44!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -496,7 +496,7 @@ quickExport: args
 4. the listMorph
 "! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/25/2023 00:36:54'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/25/2023 17:21:37'!
 quickImport: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the class of the object to import
@@ -504,7 +504,7 @@ quickImport: args
 3. the listMorph of the collection
 "
 | importedCollection file |
-	file := (StandardFileMenu new oldFileFrom: DirectoryEntry smalltalkImageDirectory withPattern: '*.csv') startUpWithCaption: 'CSV file to import'.
+	file := (StandardFileMenu new oldFileFrom: DirectoryEntry smalltalkImageDirectory withPattern: '*.csv') startUpWithCaption: 'CSV file to import' translated.
 	file ifNotNil: [
 		importedCollection := args first importFile: file directory // file name.
 		importedCollection ifNotNil: [ 
