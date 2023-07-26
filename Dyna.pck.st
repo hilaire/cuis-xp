@@ -1,6 +1,6 @@
-'From Cuis 6.0 [latest update: #5940] on 26 July 2023 at 1:42:50 pm'!
+'From Cuis 6.0 [latest update: #5940] on 27 July 2023 at 1:07:50 am'!
 'Description '!
-!provides: 'Dyna' 1 45!
+!provides: 'Dyna' 1 46!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
 SystemOrganization addCategory: 'Dyna-UI'!
@@ -406,7 +406,7 @@ quickDelete: args
 	decorator replaceSubmorph: listMorph by: objectPane .
 	quickButtons submorphsDo: #lockUnlockMorph! !
 
-!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/1/2023 18:18:25'!
+!DyBEditorVisitor methodsFor: 'ui' stamp: 'hlsf 7/27/2023 01:04:08'!
 quickEdit: args
 " args is a collection of object to operate the behavior of the quick button, in the following order:
 1. the decorated pane
@@ -430,6 +430,8 @@ quickEdit: args
 				objectMold save.
 				decorator replaceSubmorph: objectPane by: listMorph.
 				quickButtons submorphsDo: #lockUnlockMorph.
+				(listModel selectedItem respondsTo: #<=) ifTrue: [
+					listModel list reSort].
 				listModel changed: #list]					
 			];
 		actionOnCancel: [
@@ -536,14 +538,14 @@ viewsFor: aCollection browse: canBeBrowsed
 	column morphExtent: column minimumExtent.
 	^ column! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 22:02:24'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/27/2023 00:52:27'!
 visitClassGroup: class
 	| column |
 	visitedModel := class .
 	column := LayoutMorph newColumn.
 	column 	addMorph: (self paneFor: class headTeacher label: 'Head teacher' translated browse: false);	
 		addMorph: (self paneFor: class courses label: 'Lessons' translated);
-		addMorph: (self paneFor: class students label: 'Students' translated).
+		addMorph: (self paneFor: class students label: 'Students' translated browse: false).
 	^ self plugView: column! !
 
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/1/2023 08:53:00'!
@@ -633,12 +635,12 @@ printOn: str
 	number ifNil: [str nextPutAll: 'Unknown class' translated]
 		ifNotNil: [	str nextPutAll: number ]! !
 
-!DyBClassGroup methodsFor: 'initialization' stamp: 'hlsf 6/4/2023 18:24:37'!
+!DyBClassGroup methodsFor: 'initialization' stamp: 'hlsf 7/27/2023 00:37:07'!
 initialize
 	super initialize.
 	headTeacher := DyBTeacher new.
 	courses := OrderedCollection new.
-	students := OrderedCollection new! !
+	students := SortedCollection new! !
 
 !DyBClassGroup methodsFor: 'visiting' stamp: 'hlsf 6/30/2023 22:01:43'!
 accept: aVisitor 
@@ -810,14 +812,14 @@ lastName
 lastName: aString
 	lastName := 	aString ! !
 
-!DyBPerson methodsFor: 'printing' stamp: 'hlsf 6/4/2023 15:58:45'!
+!DyBPerson methodsFor: 'printing' stamp: 'hlsf 7/27/2023 00:51:21'!
 printOn: str
 	(firstName isNil or: [lastName isNil])
 		ifTrue: [str nextPutAll: 'Unknown person' translated]
 		ifFalse: [ 
-			str nextPutAll: firstName;
+			str nextPutAll: lastName;
 			space;
-			nextPutAll: lastName]! !
+			nextPutAll: firstName]! !
 
 !DyBPerson methodsFor: 'user interface' stamp: 'hlsf 7/3/2023 11:36:22'!
 mold
@@ -840,6 +842,13 @@ mold
 isStudent
 	^ true! !
 
+!DyBStudent methodsFor: 'comparing' stamp: 'hlsf 7/27/2023 00:47:41'!
+<= aPerson
+	^ lastName < aPerson lastName 
+	or: [lastName = aPerson lastName 
+		and: [	firstName <= aPerson firstName]
+		]! !
+
 !DyBStudent class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:35:08'!
 label
 	^ 'student' translated! !
@@ -847,6 +856,27 @@ label
 !DyBStudent class methodsFor: 'user interface' stamp: 'hlsf 7/15/2023 11:35:30'!
 pluralLabel
 	^ 'Students' translated! !
+
+!DyBStudent class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/27/2023 00:39:46'!
+export: persons to: writeStream
+	| writer |
+	writer := NeoCSVWriter on: writeStream.
+	writer writeHeader: #(firstName lastName email);
+		addFields: #(firstName lastName email);
+		nextPutAll: persons ! !
+
+!DyBStudent class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/27/2023 00:39:54'!
+importFrom: readStream
+"Import time slots from a CSV file with header:
+timeSlotName,start, end "
+| reader |
+	reader := NeoCSVReader on: readStream.
+	reader readHeader = #('firstName' 'lastName' 'email')
+		ifFalse: [self error: 'Headers should be firstName, lastName, email'].
+	reader 
+		recordClass: self;
+		addFields: #(firstName: lastName: email:).
+	^ reader upToEnd asSortedCollection ! !
 
 !DyBTeacher methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:52'!
 isTeacher
@@ -983,9 +1013,9 @@ mold
 	^ mold
 	! !
 
-!DyBTimeSlot methodsFor: 'as yet unclassified' stamp: 'hlsf 7/1/2023 12:52:40'!
+!DyBTimeSlot methodsFor: 'comparing' stamp: 'hlsf 7/27/2023 00:31:39'!
 <= aTimeSlot
-	^ startTime <= aTimeSlot start! !
+	^ startTime <= aTimeSlot start or: [endTime <= aTimeSlot end]! !
 
 !DyBTimeSlot class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:37:26'!
 label
