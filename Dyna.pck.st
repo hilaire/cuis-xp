@@ -1,12 +1,25 @@
-'From Cuis 6.0 [latest update: #5958] on 29 July 2023 at 12:51:05 am'!
+'From Cuis 6.0 [latest update: #5958] on 31 July 2023 at 11:15:00 am'!
 'Description '!
-!provides: 'Dyna' 1 47!
+!provides: 'Dyna' 1 49!
+!requires: 'Goodies' 1 10 nil!
 !requires: 'UI-Panel' 1 74 nil!
 !requires: 'UI-Mold' 1 10 nil!
+!requires: 'Neo-CSV-Core' 1 2 nil!
 SystemOrganization addCategory: #Dyna!
+SystemOrganization addCategory: 'Dyna-System'!
 SystemOrganization addCategory: #'Dyna-Core'!
 SystemOrganization addCategory: #'Dyna-UI'!
 
+
+!classDefinition: #DyBPlatform category: 'Dyna-System'!
+Object subclass: #DyBPlatform
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Dyna-System'!
+!classDefinition: 'DyBPlatform class' category: 'Dyna-System'!
+DyBPlatform class
+	instanceVariableNames: ''!
 
 !classDefinition: #DyBAgenda category: #'Dyna-Core'!
 Object subclass: #DyBAgenda
@@ -243,11 +256,11 @@ I visit the model of user data to provide an editor!
 !DyBViewerVisitor commentStamp: '<historical>' prior: 0!
 I visit the model of user data to provide a viewer linked to an editor.!
 
-!DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 7/28/2023 19:48:34'!
+!DyBAgenda methodsFor: 'initialization' stamp: 'hlsf 7/29/2023 16:36:04'!
 initialize
 	super initialize.
 	assignments := OrderedCollection new.
-	daysOff := OrderedCollection new.! !
+	daysOff := SortedCollection new.! !
 
 !DyBAgenda methodsFor: 'user interface' stamp: 'hlsf 7/29/2023 00:50:25'!
 mold
@@ -267,6 +280,34 @@ mold
 !DyBAgenda methodsFor: 'visiting' stamp: 'hlsf 7/28/2023 18:31:24'!
 accept: aVisitor
 	^ aVisitor visitAgenda: self! !
+
+!DyBAgenda methodsFor: 'printing' stamp: 'hlsf 7/30/2023 18:09:47'!
+printOn: stream
+	start 
+		ifNotNil: [ 	stream nextPutAll: 
+			('{1} to {2}' translated format: 
+				{start ddmmyyyy . end ddmmyyyy }) 		] 
+		ifNil: [stream nextPutAll: 'Unspecified agenda' translated]! !
+
+!DyBAgenda methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 16:09:53'!
+daysOff
+	^ daysOff ! !
+
+!DyBAgenda methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 16:23:47'!
+end
+	^ end ! !
+
+!DyBAgenda methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 16:27:11'!
+end: aDate
+	end := aDate ! !
+
+!DyBAgenda methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 16:23:42'!
+start
+	^ start! !
+
+!DyBAgenda methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 16:27:23'!
+start: aDate
+	start := 	aDate ! !
 
 !DyBClassGroup methodsFor: 'user interface' stamp: 'hlsf 6/30/2023 21:15:15'!
 mold
@@ -448,12 +489,12 @@ pluralLabel
 daysOfWeek
 	^ Week dayNames collect: [:day | day translated]! !
 
-!DyBDayInterval methodsFor: 'printing' stamp: 'hlsf 7/29/2023 00:36:36'!
+!DyBDayInterval methodsFor: 'printing' stamp: 'hlsf 7/29/2023 16:31:03'!
 printOn: aStream
 	start 
-		ifNotNil:  [aStream nextPutAll:  start yyyymmdd ;
+		ifNotNil:  [aStream nextPutAll:  start ddmmyy ;
 				nextPutAll: ' - ';
-				nextPutAll: end yyyymmdd .]
+				nextPutAll: end ddmmyy .]
 		ifNil: [aStream nextPutAll: 'days inteval' translated]! !
 
 !DyBDayInterval methodsFor: 'testing' stamp: 'hlsf 7/29/2023 00:43:52'!
@@ -478,11 +519,12 @@ start
 start: aDate
 	start := aDate ! !
 
-!DyBDayInterval methodsFor: 'comparing' stamp: 'hlsf 7/29/2023 00:48:24'!
+!DyBDayInterval methodsFor: 'comparing' stamp: 'hlsf 7/30/2023 18:08:33'!
 <= aDayInterval
-	^ start <= aDayInterval start! !
+"Date does not implement <=, dive into its attribute start, a DateAndTime "
+	^ start start <= aDayInterval start start! !
 
-!DyBDayInterval methodsFor: 'user interface' stamp: 'hlsf 7/29/2023 00:50:48'!
+!DyBDayInterval methodsFor: 'user interface' stamp: 'hlsf 7/29/2023 16:38:04'!
 mold
 	| mold |
 	mold := Mold new.
@@ -492,10 +534,39 @@ mold
 		beRequired.
 	mold dateField 
 		label: 'End' translated;
-		on: #start of: self;
+		on: #end of: self;
 		beRequired.
 	^ mold
 	! !
+
+!DyBDayInterval class methodsFor: 'user interface' stamp: 'hlsf 7/29/2023 16:18:04'!
+label
+	^ 'day off' translated! !
+
+!DyBDayInterval class methodsFor: 'user interface' stamp: 'hlsf 7/29/2023 16:24:47'!
+pluralLabel
+	^ 'Days off' translated! !
+
+!DyBDayInterval class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/29/2023 16:54:46'!
+export: daysOff to: writeStream
+	| writer |
+	writer := NeoCSVWriter on: writeStream.
+	writer writeHeader: #(start end);
+		addFields: #(start end);
+		nextPutAll: daysOff ! !
+
+!DyBDayInterval class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/29/2023 17:01:46'!
+importFrom: readStream
+"Import days off from a CSV file with header: start, end "
+| reader |
+	reader := NeoCSVReader on: readStream.
+	reader readHeader = #('start' 'end')
+		ifFalse: [self error: 'Headers should be start, end'].
+	reader 
+		recordClass: self;
+		addField: #start: converter: [:d | Date fromString: d];
+		addField: #end: converter: [:d | Date fromString: d].
+	^ reader upToEnd asSortedCollection ! !
 
 !DyBPerson methodsFor: 'testing' stamp: 'hlsf 5/23/2023 20:18:30'!
 isStudent
@@ -582,10 +653,9 @@ export: persons to: writeStream
 		addFields: #(firstName lastName email);
 		nextPutAll: persons ! !
 
-!DyBStudent class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/27/2023 00:39:54'!
+!DyBStudent class methodsFor: 'fileIn/Out' stamp: 'hlsf 7/29/2023 16:57:44'!
 importFrom: readStream
-"Import time slots from a CSV file with header:
-timeSlotName,start, end "
+"Import student from a CSV file"
 | reader |
 	reader := NeoCSVReader on: readStream.
 	reader readHeader = #('firstName' 'lastName' 'email')
@@ -730,9 +800,9 @@ mold
 	^ mold
 	! !
 
-!DyBTimeSlot methodsFor: 'comparing' stamp: 'hlsf 7/27/2023 00:31:39'!
+!DyBTimeSlot methodsFor: 'comparing' stamp: 'hlsf 7/29/2023 16:41:53'!
 <= aTimeSlot
-	^ startTime <= aTimeSlot start or: [endTime <= aTimeSlot end]! !
+	^ startTime < aTimeSlot start or: [endTime < aTimeSlot end]! !
 
 !DyBTimeSlot class methodsFor: 'user inteface' stamp: 'hlsf 7/15/2023 11:37:26'!
 label
@@ -765,11 +835,16 @@ timeSlotName,start, end "
 		addField: #end: converter: [:s | Time fromString: s].
 	^ reader upToEnd asSortedCollection ! !
 
-!DyBUserData methodsFor: 'initialization' stamp: 'hlsf 5/29/2023 14:37:11'!
+!DyBUserData methodsFor: 'initialization' stamp: 'hlsf 7/29/2023 15:31:27'!
 initialize
 	super initialize.
 	schools := OrderedCollection new.
-	user := DyBTeacher new.! !
+	user := DyBTeacher new.
+	agenda := DyBAgenda new! !
+
+!DyBUserData methodsFor: 'accessing' stamp: 'hlsf 7/29/2023 15:33:02'!
+agenda
+	^ agenda ifNil: [agenda := DyBAgenda new]! !
 
 !DyBUserData methodsFor: 'accessing' stamp: 'hlsf 6/25/2023 23:54:13'!
 schools
@@ -804,6 +879,15 @@ schoolOf: anObject
 new
 	self error: 'Class ', self name, ' has only one instance'! !
 
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/29/2023 16:10:20'!
+visitAgenda: agenda
+| mold |
+	mold := agenda mold.
+	mold when: #edited send: #triggerEvent: to: agenda with: #edited.
+	^ self newColumnWith: {
+		DecoratedPane open: mold newPane label: 'Information' translated.
+		self editorsFor: agenda daysOff ofType: DyBDayInterval}! !
+
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:39:35'!
 visitClassGroup: class
 | mold |
@@ -815,15 +899,15 @@ visitClassGroup: class
 		self editorsFor: class courses ofType: DyBCourse .
 		self editorsFor: class students ofType: DyBStudent }! !
 
-!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/15/2023 11:39:46'!
+!DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/29/2023 16:05:54'!
 visitCourse: course 
 | mold |
 	mold := course mold.
 	mold when: #edited send: #triggerEvent: to: course with: #edited.
 	^ self newColumnWith: {
 		DecoratedPane open: mold newPane label: 'Information' translated.
-		DecoratedPane open: course teacher mold newPane label: 'Teacher' translated.
-		self editorsFor: course courseHours ofType: DyBCourseHour }! !
+		self editorsFor: course courseHours ofType: DyBCourseHour .
+		DecoratedPane open: course teacher mold newPane label: 'Teacher' translated}! !
 
 !DyBEditorVisitor methodsFor: 'visiting' stamp: 'hlsf 7/2/2023 23:59:42'!
 visitCourseHour: courseHour
@@ -1116,6 +1200,15 @@ viewsFor: aCollection browse: canBeBrowsed
 	column morphExtent: column minimumExtent.
 	^ column! !
 
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/29/2023 16:34:57'!
+visitAgenda: agenda
+	| column |
+	visitedModel := agenda .
+	column := LayoutMorph newColumn.
+	column 	addMorph: (self paneFor: agenda			label: 'School year period' translated browse: false);	
+		addMorph: (self paneFor: agenda daysOff label: 'Days off' translated browse: false).
+	^ self plugView: column! !
+
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/27/2023 00:52:27'!
 visitClassGroup: class
 	| column |
@@ -1126,14 +1219,14 @@ visitClassGroup: class
 		addMorph: (self paneFor: class students label: 'Students' translated browse: false).
 	^ self plugView: column! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/1/2023 08:53:00'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/29/2023 16:04:41'!
 visitCourse: course
 	| column |
 	visitedModel := course .
 	column := LayoutMorph newColumn.
 	column
-		addMorph: (self paneFor: course teacher label: 'Teacher' translated browse: false);
-		addMorph: (self paneFor: course courseHours label: 'Periods' translated).
+		addMorph: (self paneFor: course courseHours label: 'Periods' translated);
+		addMorph: (self paneFor: course teacher label: 'Teacher' translated browse: false).
 	^ self plugView: column! !
 
 !DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/1/2023 13:30:41'!
@@ -1165,12 +1258,13 @@ visitTeacher: teacher
 	column 	addMorph: (self paneFor: teacher classGroups label: 'Classes ' translated).
 	^ self plugView: column! !
 
-!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/12/2023 11:53:31'!
+!DyBViewerVisitor methodsFor: 'visiting' stamp: 'hlsf 7/30/2023 18:08:50'!
 visitUserData: userData
 	| column |
 	visitedModel := userData.
 	column := LayoutMorph newColumn.
-	column 	addMorph: (self paneFor: userData schools label: 'Schools' translated).
+	column 	addMorph: (self paneFor: userData schools label: 'Schools' translated);
+		addMorph: (self paneFor: userData agenda label: 'Agenda' translated).
 	^ self plugView: column! !
 
 !ProtoObject methodsFor: '*Dyna' stamp: 'hlsf 7/1/2023 12:19:17'!
@@ -1182,3 +1276,11 @@ treePointsTo: anObject
 			(self instVarAt: i) isCollection 	ifTrue: [ attributesToVisit addAll: (self instVarAt: i)] ].
 		attributesToVisit anySatisfy: [:attribute | 
 			attribute == anObject or: [attribute treePointsTo: anObject		] 		] ]! !
+
+!Date methodsFor: '*Dyna-printing' stamp: 'hlsf 7/29/2023 15:51:19'!
+ddmmyy
+	^ self printFormat: #(1 2 3 $/ 1 2 1)! !
+
+!Date methodsFor: '*Dyna-printing' stamp: 'hlsf 7/29/2023 15:48:49'!
+ddmmyyyy
+	^ self printFormat: #(1 2 3 $/ 1 1 1)! !
